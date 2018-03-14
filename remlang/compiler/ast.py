@@ -1,23 +1,13 @@
 from Ruikowa.ObjectRegex.ASTDef import Ast
 from typing import Optional, Tuple
-from pipe_fn import and_then
 from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns, op_priority
 import itertools
-from cytoolz import curry
 from functools import reduce
 
 
-class Config:
-    is_intepreter = False
-
-
-class Symbol:
+class RefName:
     def __init__(self, name):
         self.name = name
-
-
-class RefName(Symbol):
-    pass
 
 
 class BreakUntil:
@@ -183,7 +173,7 @@ def ast_for_test_expr(test: Ast, ctx: dict):
 
 def parse_bin_exp(left, mid, right, ctx: dict):
     if isinstance(left, BinExp):
-        left = parse_bin_exp(*left)
+        left = parse_bin_exp(*left, ctx)
     else:
         left = ast_for_factor(left, ctx)
 
@@ -247,25 +237,6 @@ def ast_for_factor(factor: Ast, ctx: dict):
     return res
 
 
-def ast_for_inv_exp(inv: Ast, ctx: dict):
-    atom_expr, *inv_trailers = inv
-    res = ast_for_atom_expr(atom_expr, ctx)
-
-    if isinstance(res, BreakUntil) and ctx.get('@label') != res:
-        return res
-
-    for each in inv_trailers:
-
-        arg = ast_for_atom_expr(each[0], ctx)
-
-        if isinstance(arg, BreakUntil) and ctx.get('@label') != arg:
-            return arg
-
-        res = arg(res)
-
-    return res
-
-
 def ast_for_atom_expr(atom_expr: Ast, ctx: dict):
     atom, *trailers = atom_expr
     res = ast_for_atom(atom, ctx)
@@ -275,10 +246,9 @@ def ast_for_atom_expr(atom_expr: Ast, ctx: dict):
     for each in trailers:
         [expr_cons] = each
 
-        if len(expr_cons) is 1:
-            item = ast_for_atom(expr_cons[0], ctx)
-        else:
-            item = tuple(ast_for_expr_cons(expr_cons, ctx))
+        item = tuple(ast_for_expr_cons(expr_cons, ctx))
+        if len(item) is 1:
+            item = item[0]
 
         if isinstance(item, BreakUntil) and ctx.get('@label') != item:
             return item
@@ -322,19 +292,27 @@ def ast_for_atom(atom: Ast, ctx: dict):
             return ast_for_lambdef(sexpr, ctx)
 
         elif sexpr.name == 'listCons':
-            return list(ast_for_expr_cons(sexpr, ctx))
+            if not sexpr:
+                return list()
+            return list(ast_for_expr_cons(sexpr[0], ctx))
 
         elif sexpr.name == 'tupleCons':
-            return tuple(ast_for_expr_cons(sexpr, ctx))
+            if not sexpr:
+                return tuple()
+            return tuple(ast_for_expr_cons(sexpr[0], ctx))
 
         elif sexpr.name == 'setCons':
-            return set(ast_for_expr_cons(sexpr, ctx))
+            if not sexpr:
+                return set()
+            return set(ast_for_expr_cons(sexpr[0], ctx))
 
         elif sexpr.name == 'dictCons':
-            return dict(ast_for_kv_cons(sexpr, ctx))
+            if not sexpr:
+                return dict()
+            return dict(ast_for_kv_cons(sexpr[0], ctx))
 
         elif sexpr.name == 'compreh':
-            return ast_for_compreh(sexpr, ctx)
+            return ast_for_comprehension(sexpr, ctx)
         elif sexpr.name == 'string':
             return sexpr[0]
 
@@ -345,11 +323,7 @@ def ast_for_atom(atom: Ast, ctx: dict):
 
 
 def ast_for_expr_cons(expr_cons: Ast, ctx: dict):
-    new_ctx = ctx.copy()
-    new_ctx['@parent'] = ctx
-    ctx = new_ctx
-
-    for each in expr_cons[0]:
+    for each in expr_cons:
         if each.name == 'unpack':
             yield from ast_for_expr(each[0], ctx)
         else:
@@ -359,54 +333,59 @@ def ast_for_expr_cons(expr_cons: Ast, ctx: dict):
 
 
 def ast_for_kv_cons(expr_cons: Ast, ctx: dict):
-    new_ctx = ctx.copy()
-    new_ctx['@parent'] = ctx
-    ctx = new_ctx
+    if not expr_cons:
+        return ()
 
-    ctx = ctx.copy()
-    for each in expr_cons[0]:
+    for each in expr_cons:
         if each.name == 'unpack':
-            yield from ast_for_expr(each[0], ctx).items()
+            iterator = ast_for_expr(each[0], ctx)
+            yield from iterator.items() if isinstance(iterator, dict) else iterator
 
         else:
             for k, v in each:
                 yield ast_for_expr(k, ctx), ast_for_expr(v, ctx)
 
 
-def ast_for_compreh(compreh: Ast, ctx):
+def ast_for_comprehension(comprehension: Ast, ctx):
     new_ctx = ctx.copy()
     new_ctx['@parent'] = ctx
     ctx = new_ctx
 
-    collections, lambdef = compreh
+    collections, lambdef = comprehension
     collections = [ast_for_expr(each, ctx) for each in collections]
     lambdef = ast_for_lambdef(lambdef, ctx)
     return (reduce(lambda a, b: a(b), each, lambdef) for each in itertools.product(*collections))
 
 
 def ast_for_lambdef(lambdef: Ast, ctx: dict):
-    new_ctx = ctx.copy()
-    new_ctx['@parent'] = ctx
-    ctx = new_ctx
-    *args, stmts = lambdef
+    if len(lambdef) is 1:
+        if lambdef[0].name == 'singleArgs':
+            return Fn(list(each[0] for each in lambdef[0]), {}, (ctx, None))
+        else:
+            return Fn((), {}, (ctx, lambdef[0]))
+    elif len(lambdef) is 2:
+        args, stmts = lambdef
+        args = list(each[0] for each in args)
+        return Fn(args, {}, (ctx, stmts))
 
-    return Fn(list(each[0] for each in args), {}, (ctx, stmts))
+    else:
+        return lambda x: None
 
 
 class Fn:
     __slots__ = ['uneval_args', 'eval_args', 'body']
 
-    def __init__(self, uneval, eval, body: Tuple[dict, Ast]):
+    def __init__(self, uneval, eval, body: Tuple[dict, Optional[Ast]]):
         self.uneval_args = uneval
         self.eval_args = eval
         self.body = body
 
     def __call__(self, arg=()):
 
-        if not self.uneval_args and arg == ():
+        if not self.uneval_args and not arg:
             ctx, stmts = self.body
             new_ctx = ctx.copy()
-            ctx = new_ctx['@parent']
+            new_ctx['@parent'] = ctx
             new_ctx.update(self.eval_args)
             return ast_for_statements(stmts, new_ctx)
 
@@ -417,7 +396,7 @@ class Fn:
         if not uneval_args:
             ctx, stmts = self.body
             new_ctx = ctx.copy()
-            ctx = new_ctx['@parent']
+            new_ctx['@parent'] = ctx
             new_ctx.update(eval_args)
             return ast_for_statements(stmts, new_ctx)
         return Fn(uneval_args, eval_args, self.body)

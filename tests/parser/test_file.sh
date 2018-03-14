@@ -49,5 +49,3 @@ from (1, 2, 3) yield {|g| g+1} . list . print
 
 % { c where let c = 1 end : 2, 2: 3}
 """ -testTk True
-
-

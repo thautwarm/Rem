@@ -26,7 +26,7 @@ _keywords = [
     'where',
     'from',
     'yield',
-    'break-until',
+    'into',
     'let',
     'True',
     'False',
@@ -65,8 +65,11 @@ others = re.compile("|".join([
 tokenizer = (keywords, symbol, number, newline, string, others)
 
 
-@cast(list)
+@cast(tuple)
 def token(inp: str) -> List[str]:
+    if not inp:
+        return ()
+
     inp = comment_sign.sub('', inp).strip(' ')
     while True:
         for i, each in enumerate(tokenizer):
@@ -82,9 +85,7 @@ def token(inp: str) -> List[str]:
                     return
                 break
         else:
-            print(inp)
-            print(inp.strip())
-            raise Exception('wrong token.')
+            raise Exception('wrong token:', inp.encode())
 
 
 if __name__ == '__main__':

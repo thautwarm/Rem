@@ -29,13 +29,15 @@ argMany Throw [',' T]
 tupleArg Throw ['(' ')']
         ::= '(' argMany ')';
 
+singleArgs Throw [',']
+        ::= symbol (',' symbol)*;
 
 unaryOp ::= '`not`' | '+' | '-';
 suffix  ::= '?'   | '??';
 
 lambdef Throw ['{', '}', '|', ',', T]
         ::= '{'
-            ['|' [symbol (',' symbol)*] '|']
+            ['|' [singleArgs] '|']
             [T]
             [statements [T]]
             '}';
@@ -47,10 +49,10 @@ atom  Throw ['++']
              lambdef;
 
 trailer Throw ['[', ']']
-        ::= '[' exprMany ']';
+        ::= '[' exprCons ']';
 
 atomExpr Throw['!']
-        ::= atom ['!' trailer*];
+        ::= atom ['!' trailer+];
 
 invExp  ::= atomExpr invTrailer*;
 invTrailer Throw ['.']
@@ -97,17 +99,17 @@ thenTrailer Throw ['`then`'] ::= '`then`' callExp;
 statements Throw [T]
         ::= [label] statement ([T] statement)*;
 statement
-        ::= (expr | let | breakUntil) [';'];
+        ::= (expr | let | into) [';'];
 let    Throw ['`let`' '=']
         ::= '`let`' symbol '=' expr;
 
-exprMany Throw [',', T] ::= expr [([T] ',' [T] expr)+  [T] [',']];
+exprMany Throw [',', T] ::= expr [([T] ',' [T] expr)+];
 unpack   Throw ['...']  ::= '...' expr;
-exprCons Throw [',']    ::= exprMany (unpack [',' exprMany])* [','];
+exprCons Throw [',']    ::= exprMany (',' unpack [',' exprMany])* [','];
 
 kv       Throw [':', T] ::= expr ':' expr;
-kvMany   Throw [',', T] ::= kv [([T] ',' [T] kv)+  [T] [',']];
-kvCons   Throw [',']    ::= kvMany (unpack [',' kvMany])* [','];
+kvMany   Throw [',', T] ::= kv [([T] ',' [T] kv)+  [T]];
+kvCons   Throw [',']    ::= kvMany (',' unpack [',' kvMany])* [','];
 
 
 listCons  Throw ['[' ']']
@@ -119,13 +121,14 @@ setCons  Throw ['%' '{' '}']
 dictCons  Throw ['%' '{' '}']
         ::=  '%' '{' [kvCons] '}';
 
-compreh  Throw['`from`' '`yield`']  ::=  '`from`' exprMany '`yield`' lambdef;
+compreh  Throw['`from`' '`yield`']
+        ::=  '`from`' exprMany '`yield`' lambdef;
 
 label Throw ['@']
            ::= '@' symbol;
 
-breakUntil Throw ['`break-until`']
-           ::= '`break-until`' symbol;
+into Throw ['`into`']
+           ::= '`into`' symbol;
 
 file Throw [T] ::= [T] [statements [T]];
 
