@@ -1,7 +1,20 @@
 Token tk
+
+singleImportExpr
+        ::= '`import`' singleArgs ['`as`' symbol];
+importAs
+        ::= symbol ['as' symbol];
+fromImportExpr
+        ::= '`from`' singleArgs '`import`'  '(' importAs (',' importAs)* ')';
+importExpr
+        ::= singleImportExpr | fromImportExpr | remImport;
+remImport Throw ['`import`' '`as`']
+        ::= '`import`' string [ '`as`' symbol];
+
+
 comments ::= '#[\w\W]*';
 T        ::= R'\n+' + ;
-symbol  ::=  R'[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff]{1}[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\d_]*';
+symbol  ::=  R'[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff_]{1}[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\d_]*';
 
 refName Throw ['&']
         ::=  ['&'] symbol;
@@ -48,8 +61,8 @@ atom  Throw ['++']
              listCons | tupleCons | setCons | dictCons | compreh |
              lambdef;
 
-trailer Throw ['[', ']']
-        ::= '[' exprCons ']';
+trailer Throw ['[' ']' '.']
+        ::= '[' exprCons ']' | '.' symbol;
 
 atomExpr Throw['!']
         ::= atom ['!' trailer+];
@@ -99,9 +112,9 @@ thenTrailer Throw ['`then`'] ::= '`then`' callExp;
 statements Throw [T]
         ::= [label] statement ([T] statement)*;
 statement
-        ::= (expr | let | into) [';'];
-let    Throw ['`let`' '=']
-        ::= '`let`' symbol '=' expr;
+        ::= (expr | let | into | importExpr) [';'];
+let    Throw ['`let`' '=' '!']
+        ::= '`let`' symbol ['!' trailer+] '=' expr;
 
 exprMany Throw [',', T] ::= expr [([T] ',' [T] expr)+];
 unpack   Throw ['...']  ::= '...' expr;

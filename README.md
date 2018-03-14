@@ -71,7 +71,7 @@
 
 ```
 
-let str = \"I'm in where syntax\"
+let str = "I'm in where syntax"
 1 . print then {|x|
 
     case x

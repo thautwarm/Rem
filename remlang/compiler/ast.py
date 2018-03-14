@@ -1,8 +1,37 @@
-from Ruikowa.ObjectRegex.ASTDef import Ast
-from typing import Optional, Tuple
-from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns, op_priority
 import itertools
+from collections import Iterable
 from functools import reduce
+from typing import Optional
+
+from Ruikowa.Bootstrap import Ast
+from Ruikowa.ErrorFamily import handle_error
+from Ruikowa.ObjectRegex.MetaInfo import MetaInfo
+
+from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns, op_priority
+from .rem_parser import file, token
+from ..standard import default
+
+
+def flatten(seq):
+    for each in seq:
+        if isinstance(each, Iterable) and not isinstance(each, str):
+            yield from flatten(each)
+        else:
+            yield each
+
+
+rem_parser = handle_error(file)
+
+default_env = {
+    'main': {
+        **default.default,
+        'OperatorPriority': op_priority,
+        '__name__': 'main'
+    },
+    '@modules': {'main'}
+}
+
+default_env['main']['@module_manager'] = default_env
 
 
 class RefName:
@@ -42,20 +71,79 @@ def ast_for_statement(statement: Ast, ctx: dict) -> Optional:
             return res
 
     elif sexpr.name == 'let':
-        (name,), expr = sexpr
+        [name], *trailers, expr = sexpr
         res = ast_for_expr(expr, ctx)
         if isinstance(res, BreakUntil) and ctx.get('@label') != res:
             return res
-        ctx[name] = res
-        return None
+
+        if not trailers:
+            ctx[name] = res
+        else:
+            ref = ctx[name]
+
+            *fst_n, [last] = trailers
+            for each, in fst_n:
+                if each.name == 'symbol':
+                    ref = getattr(ref, each[0])
+                else:
+                    item = tuple(ast_for_expr_cons(each[0], ctx))
+                    if len(item) == 1:
+                        item = item[0]
+                    ref = ref[item]
+
+            if last.name == 'symbol':
+                setattr(ref, last[0], res)
+            else:
+                item = tuple(ast_for_expr_cons(last[0], ctx))
+                if len(item) == 1:
+                    item = item
+                ref[item] = res
+
+        return
 
     elif sexpr.name == 'label':
         [[label]] = sexpr
         ctx['@label'] = label
 
-    elif sexpr.name == 'breakUntil':
+    elif sexpr.name == 'into':
         [[label]] = sexpr
         return BreakUntil(label)
+
+    elif sexpr.name == 'importExpr':
+        if sexpr[0].name != 'remImport':
+            exec(''.join(flatten(sexpr[0])).replace('`', ' ').strip(), ctx)
+            return
+
+        import os
+        [path], *name = sexpr[0]
+        path = eval(path)
+
+        root = ctx
+        while '@module_manager' not in root:
+            root = ctx['@parent']
+        manager = root['@module_manager']
+        if not name:
+            name = os.path.split(os.path.splitext(path)[0])[1]
+        else:
+            [[name]] = name
+        if path in manager['@modules']:
+            return
+
+        manager['@modules'].add(path)
+
+        with open(path, 'r') as src_file:
+            src = src_file.read()
+        env = default.default.copy()
+
+        env['__name__'] = name
+        env['@module_manager'] = manager
+        manager[name] = env
+        rem_eval(rem_parser(token(src),
+                            meta=MetaInfo(fileName=path),
+                            partial=False), env)
+
+
+
 
     else:
         raise TypeError('unknown statement.')
@@ -160,7 +248,6 @@ def ast_for_case_expr(case_expr: Ast, ctx):
 
 def ast_for_test_expr(test: Ast, ctx: dict):
     sexpr = test[0]
-    # print(sexpr)
     if sexpr.name == 'caseExp':
         res = ast_for_case_expr(sexpr, ctx)
     elif sexpr.name == 'binExp':
@@ -192,14 +279,14 @@ def parse_bin_exp(left, mid, right, ctx: dict):
     return res
 
 
-def ast_for_bin_expr(bin: Ast, ctx: dict):
-    if len(bin) is not 1:
-        bin = order_dual_opt(bin)
-        left, mid, right = bin
+def ast_for_bin_expr(bin_expr: Ast, ctx: dict):
+    if len(bin_expr) is not 1:
+        bin_expr = order_dual_opt(bin_expr)
+        left, mid, right = bin_expr
         return parse_bin_exp(left, mid, right, ctx)
 
     else:
-        [factor] = bin
+        [factor] = bin_expr
         return ast_for_factor(factor, ctx)
 
 
@@ -243,17 +330,22 @@ def ast_for_atom_expr(atom_expr: Ast, ctx: dict):
     if isinstance(res, BreakUntil) and ctx.get('@label') != res:
         return res
 
-    for each in trailers:
-        [expr_cons] = each
+    for each, in trailers:
+        if each.name == 'symbol':
+            name = each[0]
+            res = getattr(res, name)
 
-        item = tuple(ast_for_expr_cons(expr_cons, ctx))
-        if len(item) is 1:
-            item = item[0]
+        else:
+            [expr_cons] = each
 
-        if isinstance(item, BreakUntil) and ctx.get('@label') != item:
-            return item
+            item = tuple(ast_for_expr_cons(expr_cons, ctx))
+            if len(item) is 1:
+                item = item[0]
 
-        res = res[item]
+            if isinstance(item, BreakUntil) and ctx.get('@label') != item:
+                return item
+
+            res = res[item]
     return res
 
 
@@ -375,7 +467,7 @@ def ast_for_lambdef(lambdef: Ast, ctx: dict):
 class Fn:
     __slots__ = ['uneval_args', 'eval_args', 'body']
 
-    def __init__(self, uneval, eval, body: Tuple[dict, Optional[Ast]]):
+    def __init__(self, uneval, eval, body):
         self.uneval_args = uneval
         self.eval_args = eval
         self.body = body
@@ -494,3 +586,8 @@ def pattern_match(left, right, ctx, new_ctx):
 def ast_for_file(file: Ast, ctx):
     if file:
         return ast_for_statements(file[0], ctx)
+
+
+def rem_eval(ast: Ast, env: dict):
+    ast_for_file(ast, env)
+    return env
