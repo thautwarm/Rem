@@ -43,7 +43,7 @@ symbol = re.compile(
 number = re.compile('0[Xx][\da-fA-F]+|\d+(?:\.\d+|)(?:E-{0,1}\d+|)')
 newline = re.compile('\n+')
 comment_sign = re.compile(r'(#.*)|(((/\*)+?[\w\W]+?(\*/)+))')
-string = re.compile(r"^\"([^\"]+)\"")
+string = re.compile(r"^\"([^\"]*)\"")
 others = re.compile("|".join([
     e('=>'), e('->'), e(','), e(';'), e(':'),
 

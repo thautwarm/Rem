@@ -408,10 +408,10 @@ def ast_for_atom(atom: Ast, ctx: dict):
         elif sexpr.name == 'string':
             return eval(sexpr[0])
 
-    elif isinstance(atom[0], Ast):
-        return eval(''.join(each[0] for each in atom))
-    else:
+    elif atom[0] is '(':
         return ast_for_expr(atom[1], ctx)
+    else:
+        return eval(''.join(each[0] for each in atom))
 
 
 def ast_for_expr_cons(expr_cons: Ast, ctx: dict):
