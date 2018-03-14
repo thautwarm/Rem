@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='remlang',
-    version='0.1.2',
+    version='0.1.3',
     packages=['remlang', 'remlang.compiler'],
     url='https://github.com/thautwarm/Rem',
     license='MIT',
