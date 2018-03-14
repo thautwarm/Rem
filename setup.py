@@ -14,6 +14,10 @@ setup(
             'irem=remlang.intepreter:repl'}
     },
     platforms='any',
+    install_requires=[
+        'EBNFParser >= 1.0.4',
+        'cytoolz'
+    ],
     classifiers=[
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',

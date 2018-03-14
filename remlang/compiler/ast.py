@@ -406,10 +406,10 @@ def ast_for_atom(atom: Ast, ctx: dict):
         elif sexpr.name == 'compreh':
             return ast_for_comprehension(sexpr, ctx)
         elif sexpr.name == 'string':
-            return sexpr[0]
+            return eval(sexpr[0])
 
     elif isinstance(atom[0], Ast):
-        return ''.join(each[0] for each in atom)
+        return eval(''.join(each[0] for each in atom))
     else:
         return ast_for_expr(atom[1], ctx)
 

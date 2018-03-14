@@ -33,7 +33,6 @@ op_priority = {  # priority
     '++': 12,
     '--': 12,
     '**': 12,
-    '!!': 12,
 
     '^': 12,
     '^^': 12,
@@ -43,6 +42,7 @@ op_priority = {  # priority
     '||': 14,
 
     '&&': 14,
+    '`is`': 15,
     # end[bit op]
 }
 
@@ -54,8 +54,26 @@ bin_op_fns = {
     '//': curry(operator.floordiv),
     '++': curry(operator.concat),
     '--': curry(lambda x, y: [_ for _ in x if _ not in y]),
+
+    '&': curry(operator.and_),
+    '`and`': curry(lambda x, y: x and y),
+
+    '|': curry(operator.or_),
+    '`or`': curry(lambda a, b: a or b),
+
+    '%': curry(operator.mod),
+    '**': curry(operator.pow),
+    '>>': curry(operator.lshift),
+    '<<': curry(operator.rshift),
+    '||': curry(operator.or_),
     '^': curry(operator.xor),
-    '`and`': curry(operator.and_)
+    '<': curry(operator.lt),
+    '<=': curry(operator.le),
+    '>': curry(operator.gt),
+    '>=': curry(operator.ge),
+    '==': curry(operator.eq),
+    '`is`': curry(operator.is_),
+    '!=': curry(operator.ne)
 }
 
 

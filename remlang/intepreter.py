@@ -3,9 +3,14 @@ from .compiler.ast import (default_env, handle_error, MetaInfo,
 from .compiler.rem_parser import statement
 from Ruikowa.ErrorFamily import DSLSyntaxError
 import logging
+from .standard.default import LICENSE_INFO
+import warnings
+
+warnings.filterwarnings("ignore")
 
 logger = logging.Logger('catch_all')
 main = default_env['main']
+print(LICENSE_INFO)
 
 
 def repl():
@@ -43,7 +48,7 @@ def repl():
                     count = None
                 ret = ast_for_statement(stmt, main)
                 if ret is not None:
-                    print('=> ', ret)
+                    print('=> ', repr(ret))
 
             except BaseException as e:
                 logger.error(e, exc_info=True)

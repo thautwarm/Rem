@@ -32,6 +32,7 @@ _keywords = [
     'False',
     'None',
     'import',
+    'is'
 ]
 
 keywords_map = dict(zip(_keywords, map(lambda x: f'`{x}`', _keywords)))
@@ -72,7 +73,7 @@ def token(inp: str) -> List[str]:
     if not inp:
         return ()
 
-    inp = comment_sign.sub('', inp).strip(' ')
+    inp = comment_sign.sub('', inp).strip(' ').replace('\t', ' ')
     while True:
         for i, each in enumerate(tokenizer):
             m = each.match(inp)

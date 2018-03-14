@@ -64,8 +64,8 @@ atom  Throw ['++']
 trailer Throw ['[' ']' '.']
         ::= '[' exprCons ']' | '.' symbol;
 
-atomExpr Throw['!']
-        ::= atom ['!' trailer+];
+atomExpr Throw['!', T]
+        ::= atom ['!' ([T] trailer)+];
 
 invExp  ::= atomExpr invTrailer*;
 invTrailer Throw ['.']
@@ -78,7 +78,7 @@ binExp ::= factor (
          '++'   | '--'  | '**'  | '//'|
          '^'    | '&'   | '|'   | '>>'| '<<' |
          '^^'   | '&&'  | '||'  |
-         '`and`'| '`or`'| '`in`'|
+         '`and`'| '`or`'| '`in`'| '`is`'     |
          '|>'   |
          '>'    | '<'   | '>='  | '<='|
          '=='   | '!='  |
