@@ -73,7 +73,7 @@ trailer Throw ['[' ']' '.']
 atomExpr Throw['!', T]
         ::= atom ['!' ([T] trailer)+];
 
-invExp  ::= atomExpr invTrailer*;
+invExp  ::= atomExpr (atomExpr | invTrailer)*;
 invTrailer Throw ['.']
         ::= '.' atomExpr;
 
@@ -107,13 +107,12 @@ otherwiseExp Throw ['`otherwise`', T]
 
 testExpr ::= caseExp | binExp;
 
-callExp ::= testExpr testExpr*;
-
 where Throw ['`where`', T, '`end`']   ::= '`where`' [T] [statements [T]] '`end`';
 
-expr    ::=  callExp thenTrailer* [where];
+expr    ::=  testExpr (thenTrailer | applicationTrailer)* [where];
 
-thenTrailer Throw ['`then`'] ::= '`then`' callExp;
+thenTrailer Throw ['`then`'] ::= '`then`' testExpr;
+applicationTrailer Throw ['$'] ::= '$' testExpr;
 
 statements Throw [T]
         ::= statement ([T] statement)*;

@@ -123,6 +123,22 @@ Partly **Dynamic Scoping**
 ```
 However, the **priority** of `.` is different from `then`.
 
+Here is the table of priorities in Rem:
+
+| syntax           | priority  | sample              |
+| -------          | ---       | ---                 | 
+| then             | 1         | `a then func`       |
+| `$`(applicative) | 1         | `f $ 1 2`           | 
+| case             | 2         | `case ... end`      |
+| binary expr      | 2         | `1 * 2`             |
+| unary expr       | 3         | `a?`, `a??`, `not a`|
+| `.`(inverted)    | 4         | `a . add`           |
+| function call    | 4         | `f 1 2`, `call f`   |
+|expr with trailers| 5         | `a!.name`, `a![0]`  |
+| atom             | 6         | lambda and so on    |
+
+
+
 ```
 >> let concat = {|x| print x ; {|y| print y ;x ++ y}}
 >> "left" . concat "right"

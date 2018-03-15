@@ -1,10 +1,26 @@
-[1, 2, 3] then map {|x| x+1}  then list # then print
+[1, 2, 3] . map {|x| x+1}  . list . print
 
-# `[1, 2, 3] . (map |x| x+1) . list` is ok, too
+# the priority of `.` is the same as function call.
+# the priority of `then` is the same as applicative.
+# the priority of '.' is higher than `binary expression| case expression` whose priority is higher than `then`.
+/*
 
+'`then`' = '$'
+
+< case_expr = binary_expr
+
+< unary_expr
+
+< '.' = call
+
+< '!.xxx' = '![xxx]'
+
+< atom
+
+*/
 let add = {|x, y| x+y}
 
 1 . add 2 then print
 
-from [1, 2, 3, 4, 5, 6] yield {|x| x+1} then filter {|x| x%3 == 0}  then map {|x| x**2} then list
+from [1, 2, 3, 4, 5, 6] yield {|x| x+1} . filter {|x| x%2 == 0}  . map {|x| x**2}  . list . print
 

@@ -24,7 +24,7 @@ See all features at [Inrtoduction](./intro.md).
 - **Inverted Syntax**
 
     ```
-    file . open then write some_text
+    file . open . write some_text
     ```
     
     `.` has a high priority while `then` has a lower one.

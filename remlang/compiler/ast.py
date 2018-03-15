@@ -191,56 +191,48 @@ def ast_for_inv_exp(inv: Ast, ctx: ReferenceDict):
         return res
 
     for each in inv_trailers:
+        if each.name == 'atomExpr':
+            arg = ast_for_atom_expr(each, ctx)
+            if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
+                return arg
 
-        arg = ast_for_atom_expr(each[0], ctx)
+            res = res(arg)
 
-        if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
-            return arg
+        else:  # invTrailer
+            arg = ast_for_atom_expr(each[0], ctx)
+            if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
+                return arg
 
-        res = arg(res)
+            res = arg(res)
 
     return res
 
 
 def ast_for_expr(expr: Ast, ctx: ReferenceDict):
     if expr[-1].name == 'where':
-        call, *then_trailers, where = expr
+        head, *then_trailers, where = expr
         stmts = where[0]
         res = ast_for_statements(stmts, ctx)
         if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
             return res
 
     else:
-        call, *then_trailers = expr
+        head, *then_trailers = expr
 
-    res = ast_for_call_expr(call, ctx)
-
-    if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-        return res
-
-    for each in then_trailers:
-        arg = ast_for_call_expr(each[0], ctx)
-
-        if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
-            return arg
-
-        res = arg(res)
-
-    return res
-
-
-def ast_for_call_expr(call: Ast, ctx: ReferenceDict):
-    head, *tail = call
     res = ast_for_test_expr(head, ctx)
 
     if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
         return res
 
-    for each in tail:
-        arg = ast_for_test_expr(each, ctx)
+    for each in then_trailers:
+
+        arg = ast_for_test_expr(each[0], ctx)
+
         if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
             return arg
-        res = res(arg)
+
+        res = arg(res) if each.name == 'thenTrailer' else res(arg)
+
     return res
 
 
@@ -581,7 +573,6 @@ def _pattern_match(left_e, right_e, ctx):
 
         elif left_e.name == 'tupleArg':
             many = left_e[0]
-            print(many, right_e)
             return pattern_match(many, right_e, ctx)
 
         else:
@@ -611,7 +602,6 @@ def pattern_match(left, right, ctx):
         while True:
             try:
                 k = next(left)
-                print(k)
             except StopIteration:
                 try:
                     next(right)

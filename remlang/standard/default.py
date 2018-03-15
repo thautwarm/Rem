@@ -66,11 +66,11 @@ def _slice(collection, arg):
 
 
 default = {
-    'List': list,
-    'Tuple': tuple,
-    'Set': set,
-    'Dict': dict,
-    'ODict': OrderedDict,
+    'list': list,
+    'tuple': tuple,
+    'hashset': set,
+    'dict': dict,
+    'odict': OrderedDict,
     'max': max,
     'min': min,
     'print': print,
@@ -92,6 +92,7 @@ default = {
     'slice': _slice,
     'indexer': indexer,
     'Object': Object,
-    'set': curry(setattr)
+    'set': curry(setattr),
+    'len': len
 
 }

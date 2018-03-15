@@ -1,0 +1,16 @@
+
+let tup = (1, 2, 3, (4, 5, (6, )))
+
+case tup
+    as (2, 3) => False
+
+    as (1, 2, 3, b)
+        when b . len != 3
+    => False
+
+    as (1, 2, 3, (a, b, (c, ...d)))
+        when d . len == 0 where
+            d = tuple d
+        end
+    => True
+end then print
