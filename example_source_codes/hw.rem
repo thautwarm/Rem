@@ -1,0 +1,9 @@
+
+print "Hello World"
+
+/*
+"Hello World" . print 
+or 
+"Hello World" then print
+is ok, too
+*/

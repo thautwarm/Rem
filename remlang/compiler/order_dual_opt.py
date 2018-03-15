@@ -2,6 +2,7 @@ from .linked_list import RevLinkedList, RevNode
 from collections import namedtuple
 import operator
 from cytoolz import curry
+import linq
 
 BinExp = namedtuple('BinExp', ['left', 'mid', 'right'])
 
@@ -73,8 +74,24 @@ bin_op_fns = {
     '>=': curry(operator.ge),
     '==': curry(operator.eq),
     '`is`': curry(operator.is_),
-    '!=': curry(operator.ne)
+    '!=': curry(operator.ne),
+    '`in`': curry(lambda e, collection: e in collection)
 }
+
+
+def found_local_max(seq, f):
+    last = 0
+
+    def group_helper(x):
+        nonlocal last
+        print(last)
+
+        now = f(x)
+        temp = last
+        last = now
+        return now - temp > 0
+
+    return tuple(e[-1] for i, e in linq.Flow(seq).Group(group_helper).Enum().Unboxed() if i % 2 == 0)
 
 
 def order_dual_opt(seq):
@@ -88,33 +105,20 @@ def order_dual_opt(seq):
     indices.reverse()
 
     linked_list = RevLinkedList.from_iter(seq)
-    nodes = []
-    node = linked_list.head
+    op_nodes = sorted((e for e in linked_list if isinstance(e.content, str)), key=lambda x: op_priority[x.content],
+                      reverse=True)
 
-    n = indices.pop()
-    for i in range(len(seq)):
-        if i == n:
-            nodes.append(node)
-            if indices:
-                n = indices.pop()
-            else:
-                break
-        node = node.next
+    each: RevNode
+    for each in op_nodes:
+        bin_expr = BinExp(each.prev.content, each.content, each.next.content)
+        each.content = bin_expr
 
-    op_order = [nodes[i] for i in arg_indices]
+        if each.prev.prev:
+            each.prev.prev.next = each
+        if each.next.next:
+            each.next.next.prev = each
 
-    for ordered_op in op_order:
+    return each.content
 
-        left: RevNode = ordered_op.prev
-        right: RevNode = ordered_op.next
-        mid: RevNode = ordered_op
 
-        new_node = RevNode(BinExp(left.content, mid.content, right.content))
-
-        if ordered_op.prev.prev is not None:
-            ordered_op.prev.prev.next = new_node
-            new_node.next = ordered_op.next.next
-
-    return order_dual_opt(linked_list.to_list)
-
-# print(order_dual_opt([1, '+', 2, '*', 3]))
+# print(order_dual_opt([1, '*', 2, '**', 3, '+', 4, '*', 1]))

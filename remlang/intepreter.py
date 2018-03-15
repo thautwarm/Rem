@@ -1,5 +1,5 @@
 from .compiler.ast import (default_env, handle_error, MetaInfo,
-                           token, ast_for_statement)
+                           ast_for_statement)
 from .compiler.rem_parser import statement
 from Ruikowa.ErrorFamily import DSLSyntaxError
 import logging
@@ -10,10 +10,11 @@ warnings.filterwarnings("ignore")
 
 logger = logging.Logger('catch_all')
 main = default_env['main']
-print(LICENSE_INFO)
+
 
 
 def repl():
+    print(LICENSE_INFO)
     left = []
     count = None
 
@@ -34,14 +35,16 @@ def repl():
                 continue
         except KeyboardInterrupt:
             import sys
-            print('Good Bye~')
+            print('\n    Good Bye~')
             sys.exit(0)
 
         meta = MetaInfo(fileName='<repr>')
 
-        left.extend(token(inp))
+        left.extend(main['__token__'](inp))
         try:
-            stmt = parser(left, meta=meta, partial=False)
+            stmt = parser(left, meta=meta, partial=True)
+            if meta.count != len(left):
+                raise DSLSyntaxError
             try:
                 left.clear()
                 if count is not None:
@@ -56,7 +59,7 @@ def repl():
 
         except DSLSyntaxError:
 
-            now_count = meta.count
+            now_count = meta.max_fetched
             is_incremental = count is None or now_count > count
 
             if is_incremental:

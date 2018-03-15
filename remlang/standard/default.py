@@ -1,5 +1,6 @@
 from cytoolz import curry
 from functools import reduce
+from ..compiler.utils import cast, to_chinese
 
 LICENSE_INFO = """
 Rem Language alpha, March 15 2018 02:14. 
@@ -41,5 +42,7 @@ default = {
     'call': lambda f: f(),
     'write': write,
     'read': read,
-    'open': open_do
+    'open': open_do,
+    'cast': cast,
+    'to_chinese': to_chinese
 }

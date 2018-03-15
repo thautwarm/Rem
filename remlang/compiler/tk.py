@@ -1,16 +1,6 @@
 import re
 from typing import List
-
-
-def cast(to_type):
-    def wrap_fn(func):
-        def call(*args, **kwargs):
-            return to_type(func(*args, **kwargs))
-
-        return call
-
-    return wrap_fn
-
+from .utils import *
 
 e = re.escape
 _keywords = [
@@ -36,7 +26,6 @@ _keywords = [
 ]
 
 keywords_map = dict(zip(_keywords, map(lambda x: f'`{x}`', _keywords)))
-
 keywords = re.compile('|'.join(keywords_map.values()))
 symbol = re.compile(
     '[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff_]{1}[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\d_]*')
@@ -68,12 +57,11 @@ others = re.compile("|".join([
 tokenizer = (keywords, symbol, number, newline, string, others)
 
 
-@cast(tuple)
 def token(inp: str) -> List[str]:
     if not inp:
         return ()
 
-    inp = comment_sign.sub('', inp).strip(' ').replace('\t', ' ')
+    inp = comment_sign.sub('', inp).strip(' \t\r')
     while True:
         for i, each in enumerate(tokenizer):
             m = each.match(inp)
@@ -83,21 +71,10 @@ def token(inp: str) -> List[str]:
                     yield keywords_map[w]
                 else:
                     yield w
-                inp = inp[m.end():].strip(' ')
+                inp = inp[m.end():].strip(' \t\r')
                 if not inp:
                     return
                 break
         else:
-            raise Exception('wrong token:', inp.encode())
-
-
-if __name__ == '__main__':
-    print(token(
-        """
-    fn = {| x, y |
-    
-        x + y
-    
-    }
-        """
-    ))
+            print(inp.encode())
+            raise Exception('wrong token')

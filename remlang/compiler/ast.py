@@ -8,8 +8,9 @@ from Ruikowa.ErrorFamily import handle_error
 from Ruikowa.ObjectRegex.MetaInfo import MetaInfo
 
 from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns, op_priority
-from .rem_parser import file, token
+from .rem_parser import file
 from ..standard import default
+from .token_manager import TokenManager
 
 
 def flatten(seq):
@@ -26,12 +27,18 @@ default_env = {
     'main': {
         **default.default,
         'OperatorPriority': op_priority,
-        '__name__': 'main'
+        '__name__': 'main',
+        '__token__': TokenManager(),
     },
     '@modules': {'main'}
 }
+main = default_env['main']
 
-default_env['main']['@module_manager'] = default_env
+main['@module_manager'] = default_env
+main['eval'] = lambda src: ast_for_file(rem_parser(main['__token__'](src),
+                                                   meta=MetaInfo(),
+                                                   partial=False),
+                                        main)
 
 
 class RefName:
@@ -135,10 +142,16 @@ def ast_for_statement(statement: Ast, ctx: dict) -> Optional:
             src = src_file.read()
         env = default.default.copy()
 
-        env['__name__'] = name
+        env.update(
+            __name__=name,
+            __token__=ctx['__token'],
+            eval=lambda src: ast_for_file(rem_parser(env['__token__'](src),
+                                                     meta=MetaInfo(),
+                                                     partial=False), env))
         env['@module_manager'] = manager
+
         manager[name] = env
-        rem_eval(rem_parser(token(src),
+        rem_eval(rem_parser(ctx['__token__'](src),
                             meta=MetaInfo(fileName=path),
                             partial=False), env)
 
@@ -233,7 +246,8 @@ def ast_for_as_expr(as_expr: Ast, ctx, test_exp):
         return None
 
     else:
-        return ast_for_statements(statements, new_ctx)
+        ctx.update(new_ctx)
+        return ast_for_statements(statements, ctx)
 
 
 def ast_for_case_expr(case_expr: Ast, ctx):
@@ -320,6 +334,8 @@ def ast_for_factor(factor: Ast, ctx: dict):
             return res
         elif unary_op is '-':
             return -res
+        else:  # not
+            return not res
 
     return res
 
