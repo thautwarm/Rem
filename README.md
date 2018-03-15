@@ -14,7 +14,8 @@ Just use **PyPI**. Recommend to install `cytoolz` before installing to speed up 
 
 See all features at [Inrtoduction](./intro.md).
 
-- Pattern Matching
+- [Pattern Matching](https://github.com/thautwarm/Rem/blob/master/intro.md#pattern-matching)
+
     Currenly support `case` syntax.
     ```
     case expr 
@@ -23,15 +24,30 @@ See all features at [Inrtoduction](./intro.md).
         => statements
     end
     ```
+
     In the future this feature would be applied on arguments for multiple dispatch.
 
-- **Inverted Syntax**
+- [**Inverted Syntax**](https://github.com/thautwarm/Rem/blob/master/intro.md#inverted-syntax)(see the priority table in the linked page)
 
     ```
     file . open . write some_text
     ```
     
     `.` has a high priority while `then` has a lower one.
+
+
+- [Into Statement](https://github.com/thautwarm/Rem/blob/master/intro.md#into-statement)(just like `goto`)
+     
+
+
+- [Currying Function](https://github.com/thautwarm/Rem/blob/master/intro.md#functionlambda)
+
+- [Scope](https://github.com/thautwarm/Rem/blob/master/intro.md#scope)
+
+- [Where Syntax and Block Expression](https://github.com/thautwarm/Rem/blob/master/intro.md#where-syntax)
+
+
+- [For Comprehension](https://github.com/thautwarm/Rem/blob/master/intro.md#for-comprehension)
 
 
 ## 关于中文编程

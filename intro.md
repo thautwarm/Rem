@@ -78,6 +78,20 @@ Something you need to take care is that **Functions are curried** in Rem.
 => from x, y, z let x + y + z end # another way to define a lambda
 ```
 
+
+## Applicative
+
+```
+>> let fn = {|x| x**2}
+>> fn 2 + 3
+=> 7  # 2**2 + 3
+>> fn $ 2 + 3
+=> 25 # (2+3) ** 2
+>> let fn = {|x, y| x*y}
+>> fn $ 1+2 $ 3+4
+=>  21 # 3*7 
+```
+
 ## Scope
 
 Partly **Dynamic Scoping**
