@@ -40,6 +40,8 @@ main['eval'] = lambda src: ast_for_file(rem_parser(main['__token__'](src),
                                                    partial=False),
                                         main)
 
+main['中文编程'] = lambda: main['__token__'].mut_by(main['cast'](main['to_chinese']))
+
 
 class RefName:
     def __init__(self, name):
@@ -149,6 +151,7 @@ def ast_for_statement(statement: Ast, ctx: dict) -> Optional:
                                                      meta=MetaInfo(),
                                                      partial=False), env))
         env['@module_manager'] = manager
+        env['中文编程'] = lambda: env['__token__'].mut_by(env['cast'](env['to_chinese']))
 
         manager[name] = env
         rem_eval(rem_parser(ctx['__token__'](src),
@@ -224,21 +227,20 @@ def ast_for_call_expr(call: Ast, ctx: dict):
 
 
 def ast_for_as_expr(as_expr: Ast, ctx, test_exp):
+    many = None
     when = None
     statements = None
-    if len(as_expr) is 4:
-        many, _, when, statements = as_expr
-    elif len(as_expr) is 3:
-        many, _, when = as_expr
 
-    elif len(as_expr) is 2:
-        many, statements = as_expr
-
-    else:
-        many, = as_expr
+    for each in as_expr:
+        if each.name == 'argMany':
+            many = each
+        elif each.name == 'expr':
+            when = each
+        elif each.name == 'statements':
+            statements = each
 
     new_ctx = ctx.copy()
-    if not pattern_match(many, test_exp, ctx, new_ctx):
+    if many and not pattern_match(many, test_exp, ctx, new_ctx):
         return None
     if when and not ast_for_expr(when, new_ctx):
         return None
@@ -478,7 +480,7 @@ def ast_for_lambdef(lambdef: Ast, ctx: dict):
         return Fn(args, {}, (ctx, stmts))
 
     else:
-        return lambda x: None
+        return lambda: None
 
 
 class Fn:

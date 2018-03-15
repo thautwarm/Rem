@@ -48,12 +48,20 @@ singleArgs Throw [',']
 unaryOp ::= '`not`' | '+' | '-';
 suffix  ::= '?'   | '??';
 
-lambdef Throw ['{', '}', '|', ',', T]
+lambdef Throw ['{', '}', '|', ',', '`from`', '`let`', '`end`', T]
         ::= '{'
-            ['|' [singleArgs] '|']
-            [T]
-            [statements [T]]
-            '}';
+                ['|' [singleArgs] '|']
+                [T]
+                [statements [T]]
+            '}'
+            |
+            '`from`' [T]
+                [singleArgs [T]]
+            '`let`' [T]
+                [statements [T]]
+            '`end`'
+            ;
+
 
 atom  Throw ['++']
         ::=  refName | const | string ('++' string)* | number |
@@ -88,8 +96,8 @@ binExp ::= factor (
 caseExp Throw ['`case`', '`end`', T]
         ::= '`case`' expr [T] asExp* [otherwiseExp] [T] '`end`';
 
-asExp  Throw ['=>', T, '`as`']
-        ::= '`as`' argMany
+asExp  Throw ['=>', T, '`as`', '`when`']
+        ::= ['`as`' argMany]
             [
               [T] '`when`' [T] expr
             ]
