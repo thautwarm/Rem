@@ -2,7 +2,6 @@ from .linked_list import RevLinkedList, RevNode
 from collections import namedtuple
 import operator
 from cytoolz import curry
-import linq
 
 BinExp = namedtuple('BinExp', ['left', 'mid', 'right'])
 
@@ -80,21 +79,6 @@ bin_op_fns = {
 }
 
 
-def found_local_max(seq, f):
-    last = 0
-
-    def group_helper(x):
-        nonlocal last
-        print(last)
-
-        now = f(x)
-        temp = last
-        last = now
-        return now - temp > 0
-
-    return tuple(e[-1] for i, e in linq.Flow(seq).Group(group_helper).Enum().Unboxed() if i % 2 == 0)
-
-
 def order_dual_opt(seq):
     if len(seq) <= 3:
         return seq
@@ -120,6 +104,5 @@ def order_dual_opt(seq):
             each.next.next.prev = each
 
     return each.content
-
 
 # print(order_dual_opt([1, '*', 2, '**', 3, '+', 4, '*', 1]))
