@@ -1,6 +1,6 @@
 from cytoolz import curry
 from functools import reduce
-from collections import Iterable
+from collections import Iterable, OrderedDict
 from ..compiler.utils import cast, to_chinese
 
 LICENSE_INFO = """
@@ -9,8 +9,10 @@ Backend CPython, Author thautwarm, MIT License.
 Report at https://github.com/thautwarm/Rem/issues.
 """
 
+
 class Object:
     pass
+
 
 @curry
 def open_do(file_name, mode):
@@ -64,8 +66,11 @@ def _slice(collection, arg):
 
 
 default = {
-    'list': list,
-    'tuple': tuple,
+    'List': list,
+    'Tuple': tuple,
+    'Set': set,
+    'Dict': dict,
+    'ODict': OrderedDict,
     'max': max,
     'min': min,
     'print': print,
@@ -86,6 +91,7 @@ default = {
     'while': _while,
     'slice': _slice,
     'indexer': indexer,
-    'Object': Object
+    'Object': Object,
+    'set': curry(setattr)
 
 }
