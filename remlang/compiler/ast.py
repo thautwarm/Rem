@@ -242,11 +242,12 @@ def ast_for_as_expr(as_expr: Ast, ctx, test_exp):
         return None
     if when and not ast_for_expr(when, new_ctx):
         return None
+
+    ctx.update(new_ctx)
     if not statements:
         return None
 
     else:
-        ctx.update(new_ctx)
         return ast_for_statements(statements, ctx)
 
 
