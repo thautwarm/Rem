@@ -75,7 +75,8 @@ bin_op_fns = {
     '==': curry(operator.eq),
     '`is`': curry(operator.is_),
     '!=': curry(operator.ne),
-    '`in`': curry(lambda e, collection: e in collection)
+    '`in`': curry(lambda e, collection: e in collection),
+
 }
 
 

@@ -25,22 +25,20 @@ string  ::=  R'"[\w\W]*"';
 
 const   ::=  R'`True`|`False`|`None`';
 
-arg     ::=    ['...']
-                ('_'         |
-                  refName    |
-                  tupleArg   |
-                  string
-                  ('++'
-                  string)+   |
-                  const      |
-                  number     );
+arg  Throw ['++']
+        ::= ['...'] '_'      |
+            ['...']  refName |
+              tupleArg       |
+              string         |
+              const          |
+              number         ;
 
 iterMark
         ::= ',';
 argMany Throw [',' T]
-        ::=  arg [([T] ',' [T] arg)+  [T] [iterMark]];
-tupleArg Throw ['(' ')']
-        ::= '(' argMany ')';
+        ::=  arg [([T] ',' [T] arg)+  [T]] [iterMark];
+tupleArg Throw ['(' ')', '[', ']']
+        ::= '(' argMany ')'| '[' argMany ']';
 
 singleArgs Throw [',']
         ::= symbol (',' symbol)*;
@@ -118,11 +116,11 @@ expr    ::=  callExp thenTrailer* [where];
 thenTrailer Throw ['`then`'] ::= '`then`' callExp;
 
 statements Throw [T]
-        ::= [label] statement ([T] statement)*;
+        ::= statement ([T] statement)*;
 statement
-        ::= (expr | let | into | importExpr) [';'];
-let    Throw ['`let`' '=' '!']
-        ::= '`let`' symbol ['!' trailer+] '=' expr;
+        ::= (label | let | expr | into | importExpr) [';'];
+let    Throw ['=' '!']
+        ::= ['`let`'] symbol ['!' trailer+] '=' expr;
 
 exprMany Throw [',', T] ::= expr [([T] ',' [T] expr)+];
 unpack   Throw ['...']  ::= '...' expr;
@@ -143,7 +141,7 @@ dictCons  Throw ['%' '{' '}']
         ::=  '%' '{' [kvCons] '}';
 
 compreh  Throw['`from`' '`yield`']
-        ::=  '`from`' exprMany '`yield`' lambdef;
+        ::=  '`from`' exprMany ['`not`'] '`yield`' lambdef;
 
 label Throw ['@']
            ::= '@' symbol;
