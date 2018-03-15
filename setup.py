@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='remlang',
-    version='0.3.1',
+    version='0.3.2',
     packages=['remlang', 'remlang.compiler', 'remlang.standard'],
     url='https://github.com/thautwarm/Rem',
     license='MIT',
@@ -18,7 +18,7 @@ setup(
     platforms='any',
     install_requires=[
         'EBNFParser >= 1.0.5',
-        'cytoolz'
+        'toolz'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.6',

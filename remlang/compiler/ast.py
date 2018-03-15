@@ -1,8 +1,5 @@
 import itertools
 from collections import Iterable
-from functools import reduce
-from typing import Optional
-
 from Ruikowa.Bootstrap import Ast
 from Ruikowa.ErrorFamily import handle_error
 from Ruikowa.ObjectRegex.MetaInfo import MetaInfo
@@ -60,7 +57,7 @@ class BreakUntil:
         self.name = name
 
 
-def ast_for_statements(statements: Ast, ctx: ReferenceDict) -> Optional:
+def ast_for_statements(statements: Ast, ctx: ReferenceDict):
     res = None
     for each in statements:
         res = ast_for_statement(each, ctx)
@@ -69,7 +66,7 @@ def ast_for_statements(statements: Ast, ctx: ReferenceDict) -> Optional:
     return res
 
 
-def ast_for_statement(statement: Ast, ctx: ReferenceDict) -> Optional:
+def ast_for_statement(statement: Ast, ctx: ReferenceDict):
     sexpr = statement[0]
 
     if sexpr.name == 'expr':

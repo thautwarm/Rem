@@ -1,7 +1,11 @@
 from .linked_list import RevLinkedList, RevNode
 from collections import namedtuple
 import operator
-from cytoolz import curry
+
+try:
+    from cytoolz import curry
+except ModuleNotFoundError:
+    from toolz import curry
 
 BinExp = namedtuple('BinExp', ['left', 'mid', 'right'])
 

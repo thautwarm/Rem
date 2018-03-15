@@ -1,10 +1,14 @@
-from cytoolz import curry
+try:
+    from cytoolz import curry
+except ModuleNotFoundError:
+    from toolz import curry
+
 from functools import reduce
 from collections import Iterable, OrderedDict
 from ..compiler.utils import cast, to_chinese
 
 LICENSE_INFO = """
-Rem Language alpha, March 15 2018 02:14. 
+Rem Language 0.3.2 alpha, March 15 2018 02:14. 
 Backend CPython, Author thautwarm, MIT License.
 Report at https://github.com/thautwarm/Rem/issues.
 """
@@ -93,6 +97,7 @@ default = {
     'indexer': indexer,
     'Object': Object,
     'set': curry(setattr),
-    'len': len
+    'len': len,
+    'isa': curry(isinstance)
 
 }

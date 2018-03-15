@@ -5,6 +5,10 @@
 
 # Available Rem Langauge
 
+Just use **PyPI**. Recommend to install `cytoolz` before installing to speed up function calls in Rem.
+
+[![Overview](./overview.png)](./overview.png)
+
 
 ## Some Support Features
 
