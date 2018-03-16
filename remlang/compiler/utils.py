@@ -1,4 +1,4 @@
-
+from collections import Iterable
 
 chinese_keywords = {
     '然后': '`then`',
@@ -39,4 +39,9 @@ def cast(to_type):
     return wrap_fn
 
 
-
+def flatten(seq):
+    for each in seq:
+        if isinstance(each, Iterable) and not isinstance(each, str):
+            yield from flatten(each)
+        else:
+            yield each

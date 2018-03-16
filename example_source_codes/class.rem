@@ -24,4 +24,4 @@ let cls1 = class %{
 
 let inst = call cls1
 
-inst !. go 1
+inst !. go "method call" then print

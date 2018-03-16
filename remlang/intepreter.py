@@ -71,7 +71,7 @@ def repl():
                         print(Colored.Purple, pformat(ret))
 
             except BaseException as e:
-                # logger.error(e, exc_info=True)
+                logger.error(e, exc_info=True)
                 print(Colored.Red, e.__class__.__name__ + ':', str(e))
                 continue
 

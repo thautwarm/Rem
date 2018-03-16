@@ -43,8 +43,6 @@ tupleArg Throw ['(' ')', '[', ']' T]
 singleArgs Throw [',' T]
         ::= symbol ([T] ',' [T] symbol)*;
 
-unaryOp ::= '`not`' | '+' | '-';
-suffix  ::= '?'   | '??';
 
 lambdef Throw ['{', '}', '|', ',', '`from`', '`let`', '`end`', T]
         ::= '{' [T]
@@ -77,6 +75,8 @@ invExp  ::= atomExpr (atomExpr | invTrailer)*;
 invTrailer Throw ['.']
         ::= '.' atomExpr;
 
+unaryOp ::= '`not`' | '+' | '-';
+suffix  ::= '?'   | '??';
 factor ::= [unaryOp] invExp [suffix];
 
 binExp ::= factor (
