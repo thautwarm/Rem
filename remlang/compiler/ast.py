@@ -6,7 +6,7 @@ from .reference_collections import ReferenceDict
 from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns
 from .rem_parser import file
 from .utils import flatten
-from .module import default_env, make_new_module, default, md5
+from .module import default_env, make_new_module, md5
 from .pattern_matching import pattern_match, unmatched
 
 rem_parser = handle_error(file)
