@@ -1,8 +1,12 @@
 from setuptools import setup
 
+with open('./README.rst', encoding='utf-8') as f:
+    readme = f.read()
+
 setup(
     name='remlang',
-    version='0.3.2',
+    long_description=readme,
+    version='0.3.5',
     packages=['remlang', 'remlang.compiler', 'remlang.standard'],
     url='https://github.com/thautwarm/Rem',
     license='MIT',

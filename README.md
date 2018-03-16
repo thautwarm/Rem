@@ -5,18 +5,18 @@
 
 # Available Rem Langauge
 
-Just use **PyPI**. Recommend to install `cytoolz` before installing to speed up function calls in Rem.
+Just use **PyPI**. Recommend to install `cytoolz` before installing to speed up function calls in Rem.  
 
-[![Overview](./overview+.png)](./overview.png)
+[![Overview](./overview+.png)](https://github.com/thautwarm/Rem/blob/master/overview+.png)
 
 
 ## Some Support Features
 
-See all features at [Inrtoduction](./intro.md).
+See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/master/intro.md).  
 
-- [Pattern Matching](https://github.com/thautwarm/Rem/blob/master/intro.md#pattern-matching)
 
-    Currenly support `case` syntax.
+- [Pattern Matching](https://github.com/thautwarm/Rem/blob/master/intro.md#pattern-matching)  
+    Currenly support `case` syntax.  
     ```
     case expr 
         as destruction 
@@ -25,34 +25,31 @@ See all features at [Inrtoduction](./intro.md).
     end
     ```
 
-    In the future this feature would be applied on arguments for multiple dispatch.
+    In the future this feature would be applied on arguments for multiple dispatch.  
 
-- [**Inverted Syntax**](https://github.com/thautwarm/Rem/blob/master/intro.md#inverted-syntax)(see the priority table in the linked page)
-
+- [**Inverted Syntax**](https://github.com/thautwarm/Rem/blob/master/intro.md#inverted-syntax) (see the priority table in the linked page)  
     ```
     file . open . write some_text
     ```
     
-    `.` has a high priority while `then` has a lower one.
+    `.` has a high priority while `then` has a lower one.  
 
 
-- [Into Statement](https://github.com/thautwarm/Rem/blob/master/intro.md#into-statement)(just like `goto`)
-     
+- [Into Statement](https://github.com/thautwarm/Rem/blob/master/intro.md#into-statement)(just like `goto`)  
+
+- [Currying Function](https://github.com/thautwarm/Rem/blob/master/intro.md#functionlambda)  
+
+- [Scope](https://github.com/thautwarm/Rem/blob/master/intro.md#scope)  
+
+- [Where Syntax and Block Expression](https://github.com/thautwarm/Rem/blob/master/intro.md#where-syntax)  
 
 
-- [Currying Function](https://github.com/thautwarm/Rem/blob/master/intro.md#functionlambda)
-
-- [Scope](https://github.com/thautwarm/Rem/blob/master/intro.md#scope)
-
-- [Where Syntax and Block Expression](https://github.com/thautwarm/Rem/blob/master/intro.md#where-syntax)
-
-
-- [For Comprehension](https://github.com/thautwarm/Rem/blob/master/intro.md#for-comprehension)
+- [For Comprehension](https://github.com/thautwarm/Rem/blob/master/intro.md#for-comprehension)  
 
 
 ## 关于中文编程
 
-Rem 支持中文编程来源于它的tokenizer可以被动态操控，在任意一个Rem模块里，均有一个`__token__`对象。当下内置了一个无参函数`中文编程`， 便可以使用中文关键字。
+Rem 支持中文编程来源于它的tokenizer可以被动态操控，在任意一个Rem模块里，均有一个`__token__`对象。当下内置了一个无参函数`中文编程`， 便可以使用中文关键字。  
 
 ```
 >> call 中文编程
@@ -60,7 +57,7 @@ Rem 支持中文编程来源于它的tokenizer可以被动态操控，在任意�
 => 6
 ```
 
-中英文token对照
+中英文token对照  
 ```
 {
     '然后': '`then`',
@@ -85,9 +82,9 @@ Rem 支持中文编程来源于它的tokenizer可以被动态操控，在任意�
     '是': '`is`',
     '之': '.',
 }
-```
+```  
 
-用事实证明中文编程的反人类。
+用事实证明中文编程的反人类。  
 
     
 

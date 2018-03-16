@@ -163,7 +163,7 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
 
         env.update(
             __name__=name,
-            __token__=ctx['__token'],
+            __token__=ctx['__token__'],
             eval=lambda src: ast_for_file(rem_parser(env['__token__'](src),
                                                      meta=MetaInfo(),
                                                      partial=False), env))
@@ -569,6 +569,13 @@ def _pattern_match(left_e, right_e, ctx):
             return eval(left_e[0]) == right_e
 
         elif left_e.name == 'tupleArg':
+            if not left_e:
+                try:
+                    next(right_e)
+                except StopIteration:
+                    return True
+                else:
+                    return False
             many = left_e[0]
             return pattern_match(many, right_e, ctx)
 

@@ -37,18 +37,18 @@ iterMark
         ::= ',';
 argMany Throw [',' T]
         ::=  arg [([T] ',' [T] arg)+  [T]] [iterMark];
-tupleArg Throw ['(' ')', '[', ']']
-        ::= '(' argMany ')'| '[' argMany ']';
+tupleArg Throw ['(' ')', '[', ']' T]
+        ::= '(' [T] [argMany [T]] ')'| '[' [T] [argMany [T]] ']';
 
-singleArgs Throw [',']
-        ::= symbol (',' symbol)*;
+singleArgs Throw [',' T]
+        ::= symbol ([T] ',' [T] symbol)*;
 
 unaryOp ::= '`not`' | '+' | '-';
 suffix  ::= '?'   | '??';
 
 lambdef Throw ['{', '}', '|', ',', '`from`', '`let`', '`end`', T]
-        ::= '{'
-                ['|' [singleArgs] '|']
+        ::= '{' [T]
+                ['|' [singleArgs [T]] '|']
                 [T]
                 [statements [T]]
             '}'
@@ -123,24 +123,24 @@ let    Throw ['=' '!']
 
 exprMany Throw [',', T] ::= expr [([T] ',' [T] expr)+];
 unpack   Throw ['...']  ::= '...' expr;
-exprCons Throw [',']    ::= exprMany (',' unpack [',' exprMany])* [','];
+exprCons Throw [',' T]    ::= exprMany ([T] ',' [T] unpack [[T] ',' [T] exprMany])* [','];
 
 kv       Throw [':', T] ::= expr ':' expr;
 kvMany   Throw [',', T] ::= kv [([T] ',' [T] kv)+  [T]];
-kvCons   Throw [',']    ::= kvMany (',' unpack [',' kvMany])* [','];
+kvCons   Throw [',' T]    ::= kvMany ([T] ',' [T] unpack [[T] ',' [T] kvMany])* [','];
 
 
-listCons  Throw ['[' ']']
-        ::= '[' [exprCons] ']';
-tupleCons  Throw ['(' ')']
-        ::= '(' [exprCons] ')';
-setCons  Throw ['%' '{' '}']
-        ::=  '%' '{' [exprCons] '}';
-dictCons  Throw ['%' '{' '}']
-        ::=  '%' '{' [kvCons] '}';
+listCons  Throw ['[' ']' T]
+        ::= '[' [T] [exprCons [T]] ']';
+tupleCons  Throw ['(' ')' T]
+        ::= '(' [T] [exprCons [T]] ')';
+setCons  Throw ['%' '{' '}' T]
+        ::=  '%' '{' [T] [exprCons [T]] '}';
+dictCons  Throw ['%' '{' '}' T]
+        ::=  '%' '{' [T] [kvCons [T]] '}';
 
-compreh  Throw['`from`' '`yield`']
-        ::=  '`from`' exprMany ['`not`'] '`yield`' lambdef;
+compreh  Throw['`from`' '`yield`' T]
+        ::=  '`from`' [T] exprMany [[T] '`not`'] [T] '`yield`' [T] lambdef;
 
 label Throw ['@']
            ::= '@' symbol;

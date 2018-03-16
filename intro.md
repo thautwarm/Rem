@@ -293,28 +293,39 @@ Set is also Python `set` as well as `tuple`.
 => array([2])
 >> (arr_cons [[1, 2, 3]]) ! [0]
 => array([1, 2, 3])
+```
 
+[class.rem](https://github.com/thautwarm/Rem/blob/master/example_source_codes/class.rem)
+```
 /* define class here */
-
->> class = {
+let class = {
     |fn_dict|
-    
-    let cls_inst = {
-
-        let self = Object()
-        self.__class__ = cls_inst
-        
-        from fn_dict !. items then call 
-            not yield {
-                |tp|
-                case tp as k, v 
-                    => let self. set v (k self)
-                end
+    # constructor
+    {
+        let self = call Object
+        from 
+            fn_dict !. items then call 
+        not yield {
+            |tp|
+            case tp as k, v 
+                => 
+                    
+                    self. set k (v self)
+            end
         }
         self
-    }
-    cls_inst       
+    }        
 }
+
+
+# spec
+let cls1 = class %{
+                "go":  {|x, y| y},
+            }
+
+let inst = call cls1
+
+inst !. go $ 1
 ```
 
 

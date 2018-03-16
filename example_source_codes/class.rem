@@ -1,0 +1,27 @@
+let class = {
+    |fn_dict|
+    # constructor
+    {
+        let self = call Object
+        from 
+            fn_dict !. items then call 
+        not yield {
+            |tp|
+            case tp as k, v 
+                => 
+                    
+                    self. set k (v self)
+            end
+        }
+        self
+    }        
+}
+
+
+let cls1 = class %{
+                "go":  {|x, y| y},
+            }
+
+let inst = call cls1
+
+inst !. go 1
