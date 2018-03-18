@@ -65,11 +65,11 @@ atom  Throw ['++']
              listCons | tupleCons | setCons | dictCons | compreh |
              lambdef;
 
-trailer Throw ['[' ']' '.']
-        ::= '[' exprCons ']' | '.' symbol;
+trailer Throw ['!' '[' ']' '\'']
+        ::= '!' '[' exprCons ']' | '\'' symbol;
 
-atomExpr Throw['!', T]
-        ::= atom ['!' ([T] trailer)+];
+atomExpr Throw[T]
+        ::= atom ([T] trailer)*;
 
 invExp  ::= atomExpr (atomExpr | invTrailer)*;
 invTrailer Throw ['.']
@@ -101,9 +101,6 @@ asExp  Throw ['=>', T, '`as`', '`when`']
             ]
             [T]
             ['=>' [T] [statements]];
-
-otherwiseExp Throw ['`otherwise`', T]
-        ::= '`otherwise`' [T] [statements [T]];
 
 testExpr ::= caseExp | binExp;
 

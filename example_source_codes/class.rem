@@ -4,7 +4,7 @@ let class = {
     {
         let self = call Object
         from 
-            fn_dict !. items then call 
+            fn_dict ' items . call
         not yield {
             |tp|
             case tp as k, v 
@@ -24,4 +24,4 @@ let cls1 = class %{
 
 let inst = call cls1
 
-inst !. go "method call" then print
+inst' go "method call" . print

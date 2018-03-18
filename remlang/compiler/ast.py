@@ -1,5 +1,5 @@
 import itertools
-from Ruikowa.Bootstrap import Ast
+from Ruikowa.ObjectRegex.ASTDef import Ast
 from Ruikowa.ErrorFamily import handle_error
 from Ruikowa.ObjectRegex.MetaInfo import MetaInfo
 from .reference_collections import ReferenceDict
@@ -8,6 +8,8 @@ from .rem_parser import file
 from .utils import flatten
 from .module import default_env, make_new_module, md5
 from .pattern_matching import pattern_match, unmatched
+from .control_flow import BreakUntil
+from .err import Trace
 
 rem_parser = handle_error(file)
 
@@ -32,13 +34,6 @@ class RefName:
         self.name = name
 
 
-class BreakUntil:
-    __slots__ = ['name']
-
-    def __init__(self, name):
-        self.name = name
-
-
 def ast_for_statements(statements: Ast, ctx: ReferenceDict):
     """
     statements Throw [T]
@@ -46,9 +41,11 @@ def ast_for_statements(statements: Ast, ctx: ReferenceDict):
     """
     res = None
     for each in statements:
-        res = ast_for_statement(each, ctx)
-        if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-            return res
+        try:
+            res = ast_for_statement(each, ctx)
+        except BreakUntil as e:
+            if e.name != ctx.get_local('@label'):
+                raise e
     return res
 
 
@@ -58,151 +55,145 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
         ::= (label | let | expr | into | importExpr) [';'];
     """
     # assert statement.name == 'statement'
-
     sexpr = statement[0]
     s_name: str = sexpr.name
-
-    if s_name[0] is 'e':  # expr
-        # RuikoEBNF:
-        # expr ::=  testExpr (thenTrailer | applicationTrailer)* [where];
-
-        if len(statement) is 2:
-            # end with ';', return None
-            res = ast_for_expr(sexpr, ctx)
-            if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
+    try:
+        if s_name[0] is 'e':  # expr
+            # RuikoEBNF:
+            # expr ::=  testExpr (thenTrailer | applicationTrailer)* [where];
+            if len(statement) is 2:
+                # end with ';' then return None
+                ast_for_expr(sexpr, ctx)
+            else:
+                res = ast_for_expr(sexpr, ctx)
                 return res
 
-        else:
-            res = ast_for_expr(sexpr, ctx)
-            if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-                return res
-            return res
+        elif s_name[0] is 'l':
+            if s_name[1] is 'a':  # label
+                [[label]] = sexpr
+                ctx.set_local('@label', label)
+                return
+            # else: let
 
-    elif s_name[0] is 'l':
-        if s_name[1] is 'a':  # label
-            [[label]] = sexpr
-            ctx.set_local('@label', label)
-        # else: let
+            # RuikoEBNF:
+            # let  Throw ['=' '!']
+            #   ::= ['`let`'] symbol ['!' trailer+] '=' expr;
 
-        # RuikoEBNF:
-        # let  Throw ['=' '!']
-        #   ::= ['`let`'] symbol ['!' trailer+] '=' expr;
+            to_new_ctx = False
 
-        to_new_ctx = False
+            if isinstance(sexpr[0], str):
+                # bind a new var in current environment(closure).
+                to_new_ctx = True
+                sexpr = sexpr[1:]
 
-        if isinstance(sexpr[0], str):
-            # bind a new var in current environment(closure).
-            to_new_ctx = True
-            sexpr = sexpr[1:]
+            # For the readability of source codes,
+            #   pattern matching using list destruction is better.
+            [name], *trailers, expr = sexpr
 
-        # For the readability of source codes,
-        #   pattern matching using list destruction is better.
-        [name], *trailers, expr = sexpr
+            res = ast_for_expr(expr, ctx)
 
-        res = ast_for_expr(expr, ctx)
-        if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-            return res
+            if not trailers:
+                # let symbol = ...
 
-        if not trailers:
-            # let symbol = ...
+                if to_new_ctx or name in ctx:
+                    ctx.set_local(name, res)
+                    return
 
-            if to_new_ctx or name in ctx:
-                ctx.set_local(name, res)
+                ctx.set_nonlocal(name, res)
+
+            else:
+                # let symbol !.attr = ... | let symbol ![item] = ...
+
+                ref = ctx.local if to_new_ctx else ctx.get_nonlocal_env(name)
+
+                *fst_n, [last] = trailers
+
+                # `trailers` is a list of trailer.
+                # RuikoEBNF:
+                # trailer Throw ['[' ']' '.']
+                #   ::= '[' exprCons ']' | '.' symbol;
+
+                for each, in fst_n:
+                    if each.name[0] is 's':  # symbol
+                        ref = getattr(ref, each[0])
+                    else:  # [exprCons]
+                        item = tuple(ast_for_expr_cons(each[0], ctx))
+                        if len(item) == 1:
+                            item = item[0]
+                        ref = ref[item]
+
+                if last.name[0] == 's':  # symbol
+                    # trailer = . symbol
+                    setattr(ref, last[0], res)
+                else:
+                    # trailer = [exprCons]
+                    item = tuple(ast_for_expr_cons(last[0], ctx))
+                    if len(item) == 1:
+                        item = item
+                    ref[item] = res
+
+            # let expr return None
+
+        elif s_name[0] is 'i':
+
+            if s_name[1] is 'n':  # into
+                # RuikoEBNF:
+                # into Throw ['`into`']
+                #       ::= '`into`' symbol;
+                [[label]] = sexpr
+                # TODO with result
+                raise BreakUntil(label)
+            # else: importExpr
+
+            # RuikoEBNF:
+            # importExpr
+            #   ::= singleImportExpr | fromImportExpr | remImport;
+
+            if sexpr[0].name[0] is not 'r':
+                # singleImportExpr | fromImportExpr
+                exec(''.join(flatten(sexpr[0])).replace('`', ' ').strip(), ctx.local)
                 return
 
-            ctx.set_nonlocal(name, res)
+            import os
+            [path], *name = sexpr[0]
+            path = eval(path)
 
-        else:
-            # let symbol !.attr = ... | let symbol ![item] = ...
+            manager = ctx.module_manager
 
-            ref = ctx.local if to_new_ctx else ctx.get_nonlocal_env(name)
-
-            *fst_n, [last] = trailers
-
-            # `trailers` is a list of trailer.
-            # RuikoEBNF:
-            # trailer Throw ['[' ']' '.']
-            #   ::= '[' exprCons ']' | '.' symbol;
-
-            for each, in fst_n:
-                if each.name[0] is 's':  # symbol
-                    ref = getattr(ref, each[0])
-                else:  # [exprCons]
-                    item = tuple(ast_for_expr_cons(each[0], ctx))
-                    if len(item) == 1:
-                        item = item[0]
-                    ref = ref[item]
-
-            if last.name[0] == 's':  # symbol
-                # trailer = . symbol
-                setattr(ref, last[0], res)
+            if not name:
+                # get the filename without ext
+                name = os.path.split(os.path.splitext(path)[0])[1]
             else:
-                # trailer = [exprCons]
-                item = tuple(ast_for_expr_cons(last[0], ctx))
-                if len(item) == 1:
-                    item = item
-                ref[item] = res
+                [[name]] = name
 
-        # let expr return None
+            src, md5_v = md5(path)
 
-    elif s_name[0] is 'i':
-        [[label]] = sexpr
-        return BreakUntil(label)
+            managed_modules = manager['@modules']
+            if md5_v == managed_modules.get(path):
+                # imported and file not changed.
+                # so do not import again
+                return
 
-    elif s_name[0] is 'i':
+            # or update new md5 value
+            managed_modules[path] = md5_v
 
-        if s_name[1] is 'n':  # into
-            # RuikoEBNF:
-            # into Throw ['`into`']
-            #       ::= '`into`' symbol;
-            [[label]] = sexpr
-            return BreakUntil(label)
-        # else: importExpr
+            env = make_new_module(name,
+                                  module_manager=manager,
+                                  token_manager=ctx['__token__'])
+            add_eval_func(to=env)
 
-        # RuikoEBNF:
-        # importExpr
-        #   ::= singleImportExpr | fromImportExpr | remImport;
+            rem_eval(rem_parser(env['__token__'](src),
+                                meta=MetaInfo(fileName=path),
+                                partial=False),
+                     env)
 
-        if sexpr[0].name[0] is not 'r':
-            # singleImportExpr | fromImportExpr
-            exec(''.join(flatten(sexpr[0])).replace('`', ' ').strip(), ctx.local)
-            return
-
-        import os
-        [path], *name = sexpr[0]
-        path = eval(path)
-
-        manager = ctx.module_manager
-
-        if not name:
-            # get the filename without ext
-            name = os.path.split(os.path.splitext(path)[0])[1]
         else:
-            [[name]] = name
-
-        src, md5_v = md5(path)
-
-        managed_modules = manager['@modules']
-        if md5_v == managed_modules.get(path):
-            # imported and file not changed.
-            # so do not import again
-            return
-
-        # or update new md5 value
-        managed_modules[path] = md5_v
-
-        env = make_new_module(name,
-                              module_manager=manager,
-                              token_manager=ctx['__token__'])
-        add_eval_func(to=env)
-
-        rem_eval(rem_parser(env['__token__'](src),
-                            meta=MetaInfo(fileName=path),
-                            partial=False),
-                 env)
-
-    else:
-        raise TypeError('unknown statement.')
+            raise TypeError('unknown statement.')
+    except BreakUntil as e:
+        raise e
+    except Exception as e:
+        print(statement.meta)
+        raise Trace(e, statement.meta)
 
 
 def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
@@ -217,22 +208,14 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
         head, *then_trailers, where = expr
         stmts = where[0]
         res = ast_for_statements(stmts, ctx)
-        if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-            return res
 
     else:
         head, *then_trailers = expr
 
     res = ast_for_test_expr(head, ctx)
 
-    if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-        return res
-
     for each in then_trailers:
         arg = ast_for_test_expr(each[0], ctx)
-
-        if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
-            return arg
 
         res = arg(res) if each.name[0] is 't' else res(arg)
         # res = arg(res) if each.name == 'thenTrailer' else res(arg)
@@ -250,14 +233,9 @@ def ast_for_test_expr(test: Ast, ctx: ReferenceDict):
         # if sexpr.name == 'caseExp':
         res = ast_for_case_expr(sexpr, ctx)
 
-        if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-            return res
     else:
         # elif sexpr.name == 'binExp':
         res = ast_for_bin_expr(sexpr, ctx)
-
-        if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-            return res
 
     return res
 
@@ -268,11 +246,9 @@ def ast_for_case_expr(case_expr: 'Ast', ctx: 'ReferenceDict'):
         ::= '`case`' expr [T] asExp* [otherwiseExp] [T] '`end`';
     """
     # assert case_expr.name == 'caseExp'
+
     test, *cases = case_expr
     right = ast_for_expr(test, ctx)
-
-    if isinstance(right, BreakUntil) and ctx.get_local('@label') != right:
-        return right
 
     for case in cases:
         res = ast_for_as_expr(case, ctx, right)
@@ -294,6 +270,7 @@ def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
             ['=>' [T] [statements]];
     """
     # assert as_expr.name == 'asExp'
+
     many = None
     when = None
     statements = None
@@ -310,17 +287,22 @@ def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
             # elif each.name == 'statements':
             statements = each
 
-    new_ctx = ctx.branch()
-    if many and not pattern_match(many, test_exp, new_ctx):
-        return unmatched
-    if when and not ast_for_expr(when, new_ctx):
-        return unmatched
+    try:
+        new_ctx = ctx.branch()
+        if many and not pattern_match(many, test_exp, new_ctx):
+            return unmatched
+        if when and not ast_for_expr(when, new_ctx):
+            return unmatched
 
-    ctx.update(new_ctx.local)
-    if not statements:
-        return unmatched
+        ctx.update(new_ctx.local)
+        if not statements:
+            return unmatched
 
-    return ast_for_statements(statements, ctx)
+        return ast_for_statements(statements, ctx)
+
+    except BreakUntil as e:
+        if e.name != ctx.get_local('@label'):
+            raise e
 
 
 def ast_for_bin_expr(bin_expr: 'Ast', ctx: 'ReferenceDict'):
@@ -338,6 +320,7 @@ def ast_for_bin_expr(bin_expr: 'Ast', ctx: 'ReferenceDict'):
         factor)*;
     """
     # assert bin_expr.name == 'binExp'
+
     if len(bin_expr) is not 1:
         bin_expr = order_dual_opt(bin_expr)
         left, mid, right = bin_expr
@@ -354,16 +337,10 @@ def parse_bin_exp(left, mid, right, ctx: 'ReferenceDict'):
     else:
         left = ast_for_factor(left, ctx)
 
-    if isinstance(left, BreakUntil) and ctx.get_local('@label') != left:
-        return left
-
     if isinstance(right, BinExp):
         right = parse_bin_exp(*right, ctx)
     else:
         right = ast_for_factor(right, ctx)
-
-    if isinstance(right, BreakUntil) and ctx.get_local('@label') != right:
-        return right
 
     res = bin_op_fns[mid](left, right)
     return res
@@ -382,7 +359,6 @@ def ast_for_factor(factor: 'Ast', ctx: 'ReferenceDict'):
             # if factor[-1].name == 'suffix':
             [unary_op], inv, [suffix] = factor
         else:
-
             [unary_op], inv = factor
     elif factor[-1].name[0] == 's':
         # elif factor[-1].name == 'suffix':
@@ -391,9 +367,6 @@ def ast_for_factor(factor: 'Ast', ctx: 'ReferenceDict'):
         inv, = factor
 
     res = ast_for_inv_exp(inv, ctx)
-
-    if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-        return res
 
     if suffix:
         if suffix is '?':
@@ -421,9 +394,6 @@ def ast_for_inv_exp(inv: 'Ast', ctx: 'ReferenceDict'):
     atom_expr, *inv_trailers = inv
     res = ast_for_atom_expr(atom_expr, ctx)
 
-    if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
-        return res
-
     for each in inv_trailers:
         if each.name[0] is 'a':
             # if each.name == 'atomExpr':
@@ -431,8 +401,6 @@ def ast_for_inv_exp(inv: 'Ast', ctx: 'ReferenceDict'):
             # atomExpr Throw['!', T]
             #   ::= atom ['!' ([T] trailer)+];
             arg = ast_for_atom_expr(each, ctx)
-            if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
-                return arg
 
             res = res(arg)
 
@@ -440,8 +408,6 @@ def ast_for_inv_exp(inv: 'Ast', ctx: 'ReferenceDict'):
             # RuikoEBNF:
             # invTrailer Throw ['.'] ::= '.' atomExpr;
             arg = ast_for_atom_expr(each[0], ctx)
-            if isinstance(arg, BreakUntil) and ctx.get_local('@label') != arg:
-                return arg
 
             res = arg(res)
 
@@ -450,34 +416,34 @@ def ast_for_inv_exp(inv: 'Ast', ctx: 'ReferenceDict'):
 
 def ast_for_atom_expr(atom_expr: 'Ast', ctx: 'ReferenceDict'):
     """
-    atomExpr Throw['!', T] ::= atom ['!' ([T] trailer)+];
+    atomExpr Throw[T] ::= atom ([T] trailer)*;
     """
     # assert atom_expr.name == 'atomExpr'
     atom, *trailers = atom_expr
     res = ast_for_atom(atom, ctx)
-    if isinstance(res, BreakUntil) and ctx.get_local('@label') != res:
+    try:
+        for each, in trailers:
+            # RuikoEBNF
+            # trailer Throw ['!' '[' ']' '\'']
+            #       ::= '!' '[' exprCons ']' | '\'' symbol;
+            if each.name[0] is 's':
+                # if each.name == 'symbol':
+                name = each[0]
+                res = getattr(res, name)
+
+            else:
+                # elif each.name == 'exprCons':
+                item = tuple(ast_for_expr_cons(each, ctx))
+                if len(item) is 1:
+                    item = item[0]
+
+                res = res[item]
+
         return res
-
-    for each, in trailers:
-        # RuikoEBNF
-        # trailer Throw ['[' ']' '.']
-        #       ::= '[' exprCons ']' | '.' symbol;
-        if each.name[0] is 's':
-            # if each.name == 'symbol':
-            name = each[0]
-            res = getattr(res, name)
-
-        else:
-            # elif each.name == 'exprCons':
-            item = tuple(ast_for_expr_cons(each, ctx))
-            if len(item) is 1:
-                item = item[0]
-                if isinstance(item, BreakUntil) and ctx.get_local('@label') != item:
-                    return item
-
-            res = res[item]
-
-    return res
+    except BreakUntil as e:
+        raise e
+    except Exception as e:
+        raise Trace(e, atom_expr.meta)
 
 
 def ast_for_atom(atom: 'Ast', ctx: 'ReferenceDict'):
@@ -505,7 +471,6 @@ def ast_for_atom(atom: 'Ast', ctx: 'ReferenceDict'):
         elif s_name[0] is 'c':
             if s_name[2] is 'n':  # const
                 # const ::=  R'`True`|`False`|`None`';
-
                 if sexpr[0][1] is 'T':
                     return True
                 elif sexpr[0][1] is 'F':
@@ -514,7 +479,12 @@ def ast_for_atom(atom: 'Ast', ctx: 'ReferenceDict'):
                     return None
 
             # comprehension
-            return ast_for_comprehension(sexpr, ctx)
+
+            try:
+                return ast_for_comprehension(sexpr, ctx)
+            except BreakUntil as e:
+                if e.name != ctx.get_local('@label'):
+                    raise e
 
         elif s_name[0] is 'n':
             # elif s_name == 'number':
@@ -534,7 +504,6 @@ def ast_for_atom(atom: 'Ast', ctx: 'ReferenceDict'):
             return tuple(ast_for_expr_cons(sexpr[0], ctx))
 
         elif s_name[0] is 's':
-
             if s_name[1] is 't':  # string
                 return eval(sexpr[0])
 
@@ -594,7 +563,7 @@ def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
     """
     # assert comprehension.name == 'compreh'
 
-    ctx = ctx.branch()
+    new_ctx = ctx.branch()
     if comprehension[1] == '`not`':
         collections, _, lambdef = comprehension
         is_yield = False
@@ -602,20 +571,24 @@ def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
         collections, lambdef = comprehension
         is_yield = True
 
-    cartesian_prod_collections = itertools.product(
-        *(ast_for_expr(each, ctx) for each in collections))
+    try:
+        cartesian_prod_collections = itertools.product(
+            *(ast_for_expr(each, new_ctx) for each in collections))
 
-    lambdef = ast_for_lambdef(lambdef, ctx)
+        lambdef = ast_for_lambdef(lambdef, new_ctx)
 
-    if is_yield:
-        return (_scp(lambdef, each) for each in cartesian_prod_collections)
+        if is_yield:
+            return (_scp(lambdef, each) for each in cartesian_prod_collections)
 
-    e = None
-    for each in cartesian_prod_collections:
-        e = _scp(lambdef, each)
-        if isinstance(e, BreakUntil) and ctx.get_local('@label') != e:
-            return e
-    return e
+        e = None
+        for each in cartesian_prod_collections:
+            e = _scp(lambdef, each)
+
+        return e
+
+    except BreakUntil as e:
+        if e.name != ctx.get_local('@label'):
+            raise e
 
 
 def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
@@ -661,7 +634,7 @@ def rem_eval(ast: 'Ast', env: 'ReferenceDict'):
 
 
 class Fn:
-    __slots__ = ['uneval_args', 'eval_args', 'body']
+    __slots__ = ['uneval_args', 'eval_args', 'body', 'just_raise']
 
     def __init__(self, uneval, eval, body):
         self.uneval_args = uneval
@@ -674,6 +647,7 @@ class Fn:
             ctx, stmts = self.body
             new_ctx: 'ReferenceDict' = ctx.branch()
             new_ctx.update(self.eval_args)
+
             return ast_for_statements(stmts, new_ctx)
 
         eval_args = self.eval_args.copy()
@@ -685,6 +659,7 @@ class Fn:
             new_ctx: 'ReferenceDict' = ctx.branch()
             new_ctx.update(eval_args)
             return ast_for_statements(stmts, new_ctx)
+
         return Fn(uneval_args, eval_args, self.body)
 
     @staticmethod

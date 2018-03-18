@@ -2,21 +2,11 @@ from .compiler.ast import (BreakUntil, handle_error, MetaInfo,
                            ast_for_statement, main)
 from .standard.default import LICENSE_INFO
 from .compiler.rem_parser import statement
+from .console import Colored
 from Ruikowa.ErrorFamily import DSLSyntaxError
 from pprint import pformat
 import logging
 import warnings
-
-
-class Colored:
-    Red = '\033[31m'
-    Green = '\033[32m'
-    Yellow = '\033[33m'
-    Blue = '\033[34m'
-    Purple = '\033[35m'
-    LightBlue = '\033[36m'
-    Purple2 = '\033[95m'
-
 
 warnings.filterwarnings("ignore")
 logger = logging.Logger('irem')

@@ -30,9 +30,9 @@ keywords = re.compile('|'.join(keywords_map.values()))
 symbol = re.compile(
     '[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff_]{1}[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\d_]*')
 number = re.compile('0[Xx][\da-fA-F]+|\d+(?:\.\d+|)(?:E-{0,1}\d+|)')
-newline = re.compile('\n+')
+newline = re.compile('\n')
 comment_sign = re.compile(r'(#.*)|(((/\*)+?[\w\W]+?(\*/)+))')
-string = re.compile(r"^\"([^\"]*)\"")
+string = re.compile(r'"([^\\"]+|\\.)*"')
 others = re.compile("|".join([
     e('=>'), e('->'), e(','), e(';'), e(':'), e("'"),
 
@@ -54,7 +54,7 @@ others = re.compile("|".join([
 
 ]))
 
-tokenizer = (keywords, symbol, number, newline, string, others)
+tokenizer = (newline, keywords, symbol, number, string, others)
 
 
 def token(inp: str) -> List[str]:

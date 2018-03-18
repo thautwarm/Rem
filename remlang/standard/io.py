@@ -10,7 +10,7 @@ def open_do(file_name, mode):
 
 
 @curry
-def write(content, f):
+def write(f, content):
     file = f('w')
     with file:
         file.write(content)

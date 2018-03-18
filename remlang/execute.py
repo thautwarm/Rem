@@ -1,11 +1,16 @@
 import argparse
+import os
+
+from remlang.compiler.err import Trace
 from .compiler.ast import rem_eval, MetaInfo, rem_parser
 from .intepreter import repl, main
+from .console import Colored
 
 
-def execute(src: str, env: dict):
+
+def execute(src: str, env: dict, path: str):
     rem_eval(rem_parser(env['__token__'](src),
-                        meta=MetaInfo(fileName='.'),
+                        meta=MetaInfo(fileName=path),
                         partial=False),
              main)
 
@@ -22,7 +27,7 @@ def run():
     cmdparser.add_argument('file',
                            metavar='file',
                            default='',
-                           nargs='?',
+                           nargs='*',
                            type=str,
                            help='input .rem source file')
 
@@ -36,10 +41,13 @@ def run():
     if args.repl:
         repl()
     elif args.c:
-        execute(args.c, main)
+        execute(args.c, main, '<eval-input>')
     elif args.file:
-        with open(args.file, 'r') as f:
+        with open(args.file[0], 'r') as f:
             src = f.read()
-        execute(src, main)
+
+        execute(src, main, os.path.abspath(args.file[0]))
+
+
     else:
         cmdparser.print_help()

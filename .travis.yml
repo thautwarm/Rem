@@ -1,0 +1,11 @@
+language: python
+python:
+  - "3.6"
+  - "3.6-dev"
+  - "3.7-dev"
+script:
+  - pip install EBNFParser==1.1 toolz
+  - python setup.py install
+  - bash test.sh
+
+

@@ -21,7 +21,6 @@ setup(
     },
     platforms='any',
     install_requires=[
-        'EBNFParser >= 1.0.5',
         'toolz'
     ],
     classifiers=[

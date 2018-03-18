@@ -3,10 +3,21 @@ try:
 except ModuleNotFoundError:
     from toolz import curry
 
-from functools import reduce
-from collections import Iterable, OrderedDict
+from ..compiler.control_flow import BreakUntil
+from collections import Iterable
 
-if_false_status = object()
+
+class Status:
+    __slots__ = ['name']
+
+    def __init__(self, name):
+        self.name = name
+
+    def __str__(self):
+        return 'Status[{}]'.format(self.name)
+
+
+if_false_status = Status('if_false_status')
 
 
 # if - else
@@ -65,4 +76,3 @@ def indexer(arg):
 @curry
 def rem_slice(collection, arg):
     return collection[indexer(arg)]
-

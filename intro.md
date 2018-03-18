@@ -148,7 +148,7 @@ Here is the table of priorities in Rem:
 | unary expr       | 3         | `a?`, `a??`, `not a`|
 | `.`(inverted)    | 4         | `a . add`           |
 | function call    | 4         | `f 1 2`, `call f`   |
-|expr with trailers| 5         | `a!.name`, `a![0]`  |
+|expr with trailers| 5         | `a'name`, `a![0]`  |
 | atom             | 6         | lambda and so on    |
 
 
@@ -277,21 +277,23 @@ Set is also Python `set` as well as `tuple`.
 
 - Access Member and Index
 ```
+# access member
 >> import math
->> math !. pi
+>> math 'pi
 =>  3.141592653589793
->> math !. pi . __class__
+>> math 'pi  '__class__
 =>  <class 'float'>
 
+# index
 >> import numpy as np
->> let arr_cons = np !. ndarray
+>> let arr_cons = np 'ndarray
 >> arr_cons [1, 2, 3]
 =>  array([[1, 2, 3]])
 >> (arr_cons [[1, 2, 3]]) . slice [0, (1, 2)]
 => array([2])
->> (arr_cons [[1, 2, 3]]) ! [indexer [0, (1, 2)]]
+>> (arr_cons [[1, 2, 3]]) ![indexer [0, (1, 2)]]
 => array([2])
->> (arr_cons [[1, 2, 3]]) ! [0]
+>> (arr_cons [[1, 2, 3]]) ![0]
 => array([1, 2, 3])
 ```
 
@@ -304,7 +306,7 @@ let class = {
     {
         let self = call Object
         from 
-            fn_dict !. items then call 
+            fn_dict 'items then call
         not yield {
             |tp|
             case tp as k, v 
@@ -325,7 +327,7 @@ let cls1 = class %{
 
 let inst = call cls1
 
-inst !. go $ 1
+inst'go 1
 ```
 
 

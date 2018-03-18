@@ -1,0 +1,25 @@
+@label1
+let err = {print "if print this, it must be a bug!"}
+call {
+    @u
+    from [1, 2, 3] not yield {
+        |x|
+            print "in nested closure"
+            into u
+            call err
+    }
+    print "jump here"
+    into label1
+    call err
+}
+print "hello, woman"
+import time
+let x = 3
+@break
+
+
+while { x > 1} {
+    time'sleep 1
+    1/0
+   into break
+}
