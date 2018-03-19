@@ -21,7 +21,8 @@ setup(
     },
     platforms='any',
     install_requires=[
-        'toolz'
+        'toolz',
+        'EBNFParser >= 2.0'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.6',

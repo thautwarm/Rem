@@ -45,7 +45,7 @@ default = {
     'call': lambda f: f(),
     'write': write,
     'read': read,
-    'open': open_do,
+    'open': open_file,
     'cast': cast,
     'to_chinese': to_chinese,
     'range': xrange,
