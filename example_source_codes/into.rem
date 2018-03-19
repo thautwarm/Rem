@@ -15,11 +15,11 @@ call {
 print "hello, woman"
 import time
 let x = 3
+
 @break
-
-
 while { x > 1} {
     time'sleep 1
-    1/0
-   into break
+    
+    into break
+    1/0 # if you see this err raised, it's unexpected.
 }

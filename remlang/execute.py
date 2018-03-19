@@ -7,12 +7,13 @@ from .intepreter import repl, main
 from .console import Colored
 
 
-
 def execute(src: str, env: dict, path: str):
-    rem_eval(rem_parser(env['__token__'](src),
-                        meta=MetaInfo(fileName=path),
-                        partial=False),
-             main)
+    rem_eval(env['__compiler__']
+        .from_source_code(
+        path,
+        src,
+        meta=MetaInfo(fileName=path)),
+        main)
 
 
 def run():

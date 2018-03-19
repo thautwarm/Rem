@@ -5,7 +5,7 @@ except ModuleNotFoundError:
 
 
 @curry
-def open_do(file_name, mode):
+def open_file(file_name, mode):
     return open(file_name, mode)
 
 

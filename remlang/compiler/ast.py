@@ -1,32 +1,39 @@
 import itertools
 from Ruikowa.ObjectRegex.ASTDef import Ast
-from Ruikowa.ErrorFamily import handle_error
+from Ruikowa.ErrorHandler import ErrorHandler
 from Ruikowa.ObjectRegex.MetaInfo import MetaInfo
+from typing import List, Union
+
 from .reference_collections import ReferenceDict
 from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns
-from .rem_parser import file
+from .rem_parser import file, token_table, UNameEnum, Tokenizer
 from .utils import flatten
 from .module import default_env, make_new_module, md5
 from .pattern_matching import pattern_match, unmatched
 from .control_flow import BreakUntil
 from .err import Trace
+from .tk import keywords_map
 
-rem_parser = handle_error(file)
+token_func = lambda _: Tokenizer.from_raw_strings(_, token_table, ({"space", "comments"}, {}), cast_map=keywords_map)
+rem_parser = ErrorHandler(file.match, token_func)
 
 
 # default settings. eval
 def add_eval_func(to: 'ReferenceDict'):
+    to['__compiler__'] = rem_parser
     to['eval'] = lambda src: ast_for_file(
-        rem_parser(
-            to['__token__'](src),
-            meta=MetaInfo(fileName='<eval input>'),
-            partial=False),
-        to)
+        to['__compiler__'](
+            '<eval input>',
+            src,
+            MetaInfo(fileName='<eval input>')),
+        ctx=to)
 
 
 # this is the main module
 main = make_new_module('main', default_env)
 add_eval_func(to=main)
+
+const_map = {'r': True, 'a': False, 'o': None}
 
 
 class RefName:
@@ -55,10 +62,11 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
         ::= (label | let | expr | into | importExpr) [';'];
     """
     # assert statement.name == 'statement'
+
     sexpr = statement[0]
     s_name: str = sexpr.name
     try:
-        if s_name[0] is 'e':  # expr
+        if s_name is UNameEnum.expr:  # expr
             # RuikoEBNF:
             # expr ::=  testExpr (thenTrailer | applicationTrailer)* [where];
             if len(statement) is 2:
@@ -68,132 +76,128 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
                 res = ast_for_expr(sexpr, ctx)
                 return res
 
-        elif s_name[0] is 'l':
-            if s_name[1] is 'a':  # label
-                [[label]] = sexpr
-                ctx.set_local('@label', label)
-                return
-            # else: let
+        elif s_name is UNameEnum.label:
+            [symbol] = sexpr
+            assert symbol.name is UNameEnum.symbol
+            ctx.set_local('@label', symbol.string)
 
+        elif s_name is UNameEnum.let:
             # RuikoEBNF:
             # let  Throw ['=' '!']
             #   ::= ['`let`'] symbol ['!' trailer+] '=' expr;
 
             to_new_ctx = False
 
-            if isinstance(sexpr[0], str):
+            symbol: 'Tokenizer'
+            trailers: 'List[Ast]'
+            expr: 'Ast'
+            if sexpr[0].string is UNameEnum.keyword_let:
                 # bind a new var in current environment(closure).
                 to_new_ctx = True
-                sexpr = sexpr[1:]
+                _, symbol, *trailers, expr = sexpr
+            else:
 
-            # For the readability of source codes,
-            #   pattern matching using list destruction is better.
-            [name], *trailers, expr = sexpr
+                # For the readability of source codes,
+                #   pattern matching using list destruction is better.
+                symbol, *trailers, expr = sexpr
 
             res = ast_for_expr(expr, ctx)
-
             if not trailers:
                 # let symbol = ...
+                ctx.set_local(symbol.string, res)
+                return
 
-                if to_new_ctx or name in ctx:
-                    ctx.set_local(name, res)
-                    return
+            # let symbol 'attr = ... | let symbol ![item] = ...
+            ref = ctx.local if to_new_ctx else ctx.get_nonlocal_env(symbol.string)
+            fst_n: 'List[Ast]'
+            last: 'Union[Tokenizer, Ast]'
+            *fst_n, [last, ] = trailers
 
-                ctx.set_nonlocal(name, res)
+            # `trailers` is a list of trailer.
+            # RuikoEBNF:
+            # trailer Throw ['[' ']' '.']
+            #   ::= '[' exprCons ']' | '\'' symbol;
+            each: 'Union[Ast, Tokenizer]'
+            for each, in fst_n:
 
+                if each.name is UNameEnum.symbol:  # symbol
+                    ref = getattr(ref, each.string)
+
+                else:  # [exprCons]
+                    item = tuple(ast_for_expr_cons(each, ctx))
+                    if len(item) is 1:
+                        item = item[0]
+                    ref = ref[item]
+
+            if last.name == UNameEnum.symbol:  # symbol
+                # trailer = . symbol
+                setattr(ref, last.string, res)
             else:
-                # let symbol !.attr = ... | let symbol ![item] = ...
+                # trailer = [exprCons]
+                item = tuple(ast_for_expr_cons(last, ctx))
+                if len(item) is 1:
+                    item = item[0]
+                ref[item] = res
 
-                ref = ctx.local if to_new_ctx else ctx.get_nonlocal_env(name)
+            # let expr return Nothing
+        elif s_name is UNameEnum.into:
+            # RuikoEBNF:
+            # into Throw ['`into`']
+            #       ::= '`into`' symbol;
+            [symbol] = sexpr
+            # TODO with result
+            raise BreakUntil(symbol.string)
 
-                *fst_n, [last] = trailers
-
-                # `trailers` is a list of trailer.
-                # RuikoEBNF:
-                # trailer Throw ['[' ']' '.']
-                #   ::= '[' exprCons ']' | '.' symbol;
-
-                for each, in fst_n:
-                    if each.name[0] is 's':  # symbol
-                        ref = getattr(ref, each[0])
-                    else:  # [exprCons]
-                        item = tuple(ast_for_expr_cons(each[0], ctx))
-                        if len(item) == 1:
-                            item = item[0]
-                        ref = ref[item]
-
-                if last.name[0] == 's':  # symbol
-                    # trailer = . symbol
-                    setattr(ref, last[0], res)
-                else:
-                    # trailer = [exprCons]
-                    item = tuple(ast_for_expr_cons(last[0], ctx))
-                    if len(item) == 1:
-                        item = item
-                    ref[item] = res
-
-            # let expr return None
-
-        elif s_name[0] is 'i':
-
-            if s_name[1] is 'n':  # into
-                # RuikoEBNF:
-                # into Throw ['`into`']
-                #       ::= '`into`' symbol;
-                [[label]] = sexpr
-                # TODO with result
-                raise BreakUntil(label)
-            # else: importExpr
-
+        elif s_name is UNameEnum.importExpr:
             # RuikoEBNF:
             # importExpr
             #   ::= singleImportExpr | fromImportExpr | remImport;
+            branch: 'Ast'
+            [branch] = sexpr
 
-            if sexpr[0].name[0] is not 'r':
-                # singleImportExpr | fromImportExpr
-                exec(''.join(flatten(sexpr[0])).replace('`', ' ').strip(), ctx.local)
+            if branch.name is not UNameEnum.remImport:
+                exec(' '
+                     .join(
+                    map(lambda _: _.string,
+                        flatten(
+                            branch)))
+                     .strip(),
+                     ctx.local)
                 return
-
             import os
-            [path], *name = sexpr[0]
-            path = eval(path)
-
-            manager = ctx.module_manager
-
-            if not name:
-                # get the filename without ext
-                name = os.path.split(os.path.splitext(path)[0])[1]
+            string: 'Tokenizer'
+            if len(sexpr) is 2:
+                string, symbol = sexpr
+                path = string.string
+                name = symbol.string
             else:
-                [[name]] = name
+                [string] = sexpr
+                path = string.string
+                name = name = os.path.split(
+                    os.path.splitext(path)[0])[1]
 
-            src, md5_v = md5(path)
-
+            path = eval(path)
+            src_code, md5_v = md5(path)
+            manager = ctx.module_manager
             managed_modules = manager['@modules']
+
             if md5_v == managed_modules.get(path):
                 # imported and file not changed.
                 # so do not import again
                 return
 
-            # or update new md5 value
             managed_modules[path] = md5_v
-
-            env = make_new_module(name,
-                                  module_manager=manager,
-                                  token_manager=ctx['__token__'])
+            env = make_new_module(name, manager, ctx['__compiler__'])
             add_eval_func(to=env)
-
-            rem_eval(rem_parser(env['__token__'](src),
-                                meta=MetaInfo(fileName=path),
-                                partial=False),
-                     env)
+            rem_eval(env['__compiler__'].from_source_code(path, src_code, MetaInfo(fileName=path)), env)
+            ctx.set_local(name, env)
 
         else:
             raise TypeError('unknown statement.')
     except BreakUntil as e:
         raise e
     except Exception as e:
-        print(statement.meta)
-        raise Trace(e, statement.meta)
+        raise Trace(e, statement)
 
 
 def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
@@ -203,8 +207,7 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
             [where];
     """
     # assert expr.name == 'expr'
-    if expr[-1].name[0] is 'w':  # where
-        # if expr[-1].name == 'where':
+    if expr[-1].name is UNameEnum.where:  # where
         head, *then_trailers, where = expr
         stmts = where[0]
         res = ast_for_statements(stmts, ctx)
@@ -216,10 +219,7 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
 
     for each in then_trailers:
         arg = ast_for_test_expr(each[0], ctx)
-
-        res = arg(res) if each.name[0] is 't' else res(arg)
-        # res = arg(res) if each.name == 'thenTrailer' else res(arg)
-
+        res = arg(res) if each.name is UNameEnum.thenTrailer else res(arg)
     return res
 
 
@@ -227,14 +227,11 @@ def ast_for_test_expr(test: Ast, ctx: ReferenceDict):
     """
     testExpr ::= caseExp | binExp;
     """
-    # assert test.name == 'testExpr'
     sexpr = test[0]
-    if sexpr.name[0] is 'c':
-        # if sexpr.name == 'caseExp':
+    if sexpr.name is UNameEnum.caseExp:
         res = ast_for_case_expr(sexpr, ctx)
 
     else:
-        # elif sexpr.name == 'binExp':
         res = ast_for_bin_expr(sexpr, ctx)
 
     return res
@@ -245,7 +242,7 @@ def ast_for_case_expr(case_expr: 'Ast', ctx: 'ReferenceDict'):
     caseExp Throw ['`case`', '`end`', T]
         ::= '`case`' expr [T] asExp* [otherwiseExp] [T] '`end`';
     """
-    # assert case_expr.name == 'caseExp'
+    assert case_expr.name is UNameEnum.caseExp
 
     test, *cases = case_expr
     right = ast_for_expr(test, ctx)
@@ -277,14 +274,11 @@ def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
 
     for each in as_expr:
 
-        if each.name[0] is 'a':
-            # if each.name == 'argMany':
+        if each.name is UNameEnum.argMany:
             many = each
-        elif each.name[0] is 'e':
-            # elif each.name == 'expr':
+        elif each.name is UNameEnum.expr:
             when = each
-        elif each.name[0] == 's':
-            # elif each.name == 'statements':
+        elif each.name is UNameEnum.statements:
             statements = each
 
     try:
@@ -307,21 +301,10 @@ def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
 
 def ast_for_bin_expr(bin_expr: 'Ast', ctx: 'ReferenceDict'):
     """
-    binExp ::= factor (
-        ('+'    | '-'   | '*'   | '/' | '%'  |
-         '++'   | '--'  | '**'  | '//'|
-         '^'    | '&'   | '|'   | '>>'| '<<' |
-         '^^'   | '&&'  | '||'  |
-         '`and`'| '`or`'| '`in`'| '`is`'     |
-         '|>'   |
-         '>'    | '<'   | '>='  | '<='|
-         '=='   | '!='  |
-         '<-')
-        factor)*;
+    binExp ::= factor ( (operator | 'or' | 'and' | 'in' | 'is' | 'is not' | 'not in') factor)*;
     """
-    # assert bin_expr.name == 'binExp'
-
     if len(bin_expr) is not 1:
+        bin_expr = [each.string if each.__class__ is Tokenizer else each for each in bin_expr]
         bin_expr = order_dual_opt(bin_expr)
         left, mid, right = bin_expr
         return parse_bin_exp(left, mid, right, ctx)
@@ -351,34 +334,31 @@ def ast_for_factor(factor: 'Ast', ctx: 'ReferenceDict'):
     factor ::= [unaryOp] invExp [suffix];
     """
     # assert factor.name == 'factor'
-    unary_op = None
-    suffix = None
-    if factor[0].name[0] is 'u':
-        # if factor[0].name == 'unaryOp':
-        if factor[-1].name[0] is 's':
-            # if factor[-1].name == 'suffix':
-            [unary_op], inv, [suffix] = factor
+    unary_op: 'Tokenizer' = None
+    suffix: 'Tokenizer' = None
+    if factor[0].name is UNameEnum.unaryOp:
+        if factor[-1].name is UNameEnum.suffix:
+            unary_op, inv, suffix = factor
         else:
-            [unary_op], inv = factor
-    elif factor[-1].name[0] == 's':
-        # elif factor[-1].name == 'suffix':
-        inv, [suffix] = factor
+            unary_op, inv = factor
+    elif factor[-1].name is UNameEnum.suffix:
+        inv, suffix = factor
     else:
         inv, = factor
 
     res = ast_for_inv_exp(inv, ctx)
 
     if suffix:
-        if suffix is '?':
+        if suffix.string is '?':
             res = True if res else False
         else:
             # '??'
             res = res is not None
 
     if unary_op:
-        if unary_op is '+':
+        if unary_op.string is '+':
             return res
-        elif unary_op is '-':
+        elif unary_op.string is '-':
             return -res
         else:  # not
             return not res
@@ -390,26 +370,20 @@ def ast_for_inv_exp(inv: 'Ast', ctx: 'ReferenceDict'):
     """
     invExp  ::= atomExpr (atomExpr | invTrailer)*;
     """
-    # assert inv.name == 'invExp'
+    assert inv.name is UNameEnum.invExp
     atom_expr, *inv_trailers = inv
     res = ast_for_atom_expr(atom_expr, ctx)
 
     for each in inv_trailers:
-        if each.name[0] is 'a':
-            # if each.name == 'atomExpr':
-            # RuikoEBNF
-            # atomExpr Throw['!', T]
-            #   ::= atom ['!' ([T] trailer)+];
+        if each.name is UNameEnum.atomExpr:
             arg = ast_for_atom_expr(each, ctx)
-
             res = res(arg)
-
-        else:  # invTrailer
-            # RuikoEBNF:
-            # invTrailer Throw ['.'] ::= '.' atomExpr;
-            arg = ast_for_atom_expr(each[0], ctx)
-
-            res = arg(res)
+            continue
+        # invTrailer
+        # RuikoEBNF:
+        # invTrailer Throw ['.'] ::= '.' atomExpr;
+        arg = ast_for_atom_expr(each[0], ctx)
+        res = arg(res)
 
     return res
 
@@ -418,7 +392,7 @@ def ast_for_atom_expr(atom_expr: 'Ast', ctx: 'ReferenceDict'):
     """
     atomExpr Throw[T] ::= atom ([T] trailer)*;
     """
-    # assert atom_expr.name == 'atomExpr'
+    assert atom_expr.name is UNameEnum.atomExpr
     atom, *trailers = atom_expr
     res = ast_for_atom(atom, ctx)
     try:
@@ -426,24 +400,21 @@ def ast_for_atom_expr(atom_expr: 'Ast', ctx: 'ReferenceDict'):
             # RuikoEBNF
             # trailer Throw ['!' '[' ']' '\'']
             #       ::= '!' '[' exprCons ']' | '\'' symbol;
-            if each.name[0] is 's':
-                # if each.name == 'symbol':
-                name = each[0]
-                res = getattr(res, name)
 
+            if each.name is UNameEnum.symbol:
+                name = each.string
+                res = getattr(res, name)
             else:
-                # elif each.name == 'exprCons':
                 item = tuple(ast_for_expr_cons(each, ctx))
                 if len(item) is 1:
                     item = item[0]
-
                 res = res[item]
-
         return res
+
     except BreakUntil as e:
         raise e
     except Exception as e:
-        raise Trace(e, atom_expr.meta)
+        raise Trace(e, atom_expr)
 
 
 def ast_for_atom(atom: 'Ast', ctx: 'ReferenceDict'):
@@ -454,73 +425,63 @@ def ast_for_atom(atom: 'Ast', ctx: 'ReferenceDict'):
              listCons | tupleCons | setCons | dictCons | compreh |
              lambdef;
     """
-    # assert atom.name == 'atom'
+    assert atom.name is UNameEnum.atom
     if len(atom) is 1:
         sexpr = atom[0]
         s_name = sexpr.name
-        if s_name[0] is 'r':
-            # if s_name == 'refName':
+        if s_name is UNameEnum.refName:
 
-            *ref, [name] = sexpr
-            if ref:
-                return RefName(name)
+            if len(sexpr) is 2:
+                return RefName(sexpr[1].string)
 
-            ctx = ctx.get_nonlocal_env(name)
-            return ctx[name]
+            return ctx.get_nonlocal(sexpr[0].string)
 
-        elif s_name[0] is 'c':
-            if s_name[2] is 'n':  # const
-                # const ::=  R'`True`|`False`|`None`';
-                if sexpr[0][1] is 'T':
-                    return True
-                elif sexpr[0][1] is 'F':
-                    return False
-                else:  # None
-                    return None
+        elif s_name is UNameEnum.const:
+            sign = sexpr[0].string[1]
+            return const_map[sign]
 
+        elif s_name is UNameEnum.compreh:
             # comprehension
-
             try:
                 return ast_for_comprehension(sexpr, ctx)
             except BreakUntil as e:
                 if e.name != ctx.get_local('@label'):
                     raise e
 
-        elif s_name[0] is 'n':
-            # elif s_name == 'number':
-            return eval(sexpr[0])
+        elif s_name is UNameEnum.number:
+            return eval(sexpr.string)
 
-        elif s_name[0] is 'l':
-            if s_name[1] is 'a':  # lambdef
-                return ast_for_lambdef(sexpr, ctx)
-            # listCons
+        elif s_name is UNameEnum.lambdef:
+            return ast_for_lambdef(sexpr, ctx)
+
+        elif s_name is UNameEnum.listCons:
             if not sexpr:
                 return list()
             return list(ast_for_expr_cons(sexpr[0], ctx))
 
-        elif s_name[0] is 't':  # tupleCons
+        elif s_name is UNameEnum.tupleCons:  # tupleCons
             if not sexpr:
                 return tuple()
             return tuple(ast_for_expr_cons(sexpr[0], ctx))
 
-        elif s_name[0] is 's':
-            if s_name[1] is 't':  # string
-                return eval(sexpr[0])
+        elif s_name is UNameEnum.string:
+            return eval(sexpr.string)
 
-            # setCons
+        elif s_name is UNameEnum.setCons:
             if not sexpr:
                 return set()
             return set(ast_for_expr_cons(sexpr[0], ctx))
 
-        elif s_name[0] is 'd':  # dictCons
+        elif s_name is UNameEnum.dictCons:  # dictCons
             if not sexpr:
                 return dict()
             return dict(ast_for_kv_cons(sexpr[0], ctx))
 
-    elif atom[0] is '(':  # '(' expr ')'
+    elif atom[0].string is '(':  # '(' expr ')'
         return ast_for_expr(atom[1], ctx)
+
     else:  # string ('++' string)*
-        return ''.join(eval(each[0]) for each in atom)
+        return ''.join(eval(each.string) for each in atom)
 
 
 def ast_for_expr_cons(expr_cons: 'Ast', ctx: 'ReferenceDict'):
@@ -528,7 +489,7 @@ def ast_for_expr_cons(expr_cons: 'Ast', ctx: 'ReferenceDict'):
     exprCons Throw [',' T] ::= exprMany ([T] ',' [T] unpack [[T] ',' [T] exprMany])* [','];
     """
     for each in expr_cons:
-        if each.name[0] is 'u':  # unpack
+        if each.name is UNameEnum.unpack:  # unpack
             yield from ast_for_expr(each[0], ctx)
         else:
             for e in each:
@@ -541,7 +502,7 @@ def ast_for_kv_cons(expr_cons: Ast, ctx: ReferenceDict):
     kvCons   Throw [',' T]    ::= kvMany ([T] ',' [T] unpack [[T] ',' [T] kvMany])* [','];
     """
     for each in expr_cons:
-        if each.name[0] is 'u':  # unpack
+        if each.name is UNameEnum.unpack:  # unpack
             iterator = ast_for_expr(each[0], ctx)
             yield from iterator.items() if isinstance(iterator, dict) else iterator
 
@@ -564,7 +525,7 @@ def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
     # assert comprehension.name == 'compreh'
 
     new_ctx = ctx.branch()
-    if comprehension[1] == '`not`':
+    if comprehension[1].name is UNameEnum.keyword:
         collections, _, lambdef = comprehension
         is_yield = False
     else:
@@ -589,6 +550,7 @@ def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
     except BreakUntil as e:
         if e.name != ctx.get_local('@label'):
             raise e
+        return e.res
 
 
 def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
@@ -607,18 +569,18 @@ def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
             '`end`'
             ;
     """
-    # assert lambdef.name == 'lambdef'
-    if len(lambdef) is 1:
+    assert lambdef.name is UNameEnum.lambdef
+    n = len(lambdef)
+    if n is 1:
         lambdef, = lambdef
-        if lambdef.name[1] == 'i':  # singleArgs
-            return Fn(list(each[0] for each in lambdef), {}, (ctx, None))
+        if lambdef.name is UNameEnum.singleArgs:  # singleArgs
+            return Fn(list(each.string for each in lambdef), {}, (ctx, None))
         else:
             return Fn((), {}, (ctx, lambdef))
 
-    elif len(lambdef) is 2:
+    elif n is 2:
         args, stmts = lambdef
-        args = list(each[0] for each in args)
-        return Fn(args, {}, (ctx, stmts))
+        return Fn(list(each.string for each in args), {}, (ctx, stmts))
     else:
         return lambda: None
 
