@@ -1,0 +1,31 @@
+@break
+
+let x = 1
+case (1, 2, 3, (4, 5, 6))
+        as (1, 2, 3) => print "???"
+        as (&x, 2, a, (4, b, ...c))
+end
+(a, b, c.tuple)
+"some_text.txt" . open . write "some info"
+"some_text.txt" . open . read
+read (open "some_text.txt")
+read $ open "some_text.txt"
+
+while {x < 10} {
+      print x
+      x = x + 1
+      into break
+   }
+
+
+from [1, 2, 3], ["1", "2"] yield {|a, b| (a, b)} . filter {|x| x![0] != 2} . list
+import numpy as np
+np'array [[1, 2, 3], [4, 5, 6]] . slice [(0,2), (0, 2)]
+np'max [1, 2, 3]
+let h = 1; let r = 2;
+
+let S = S1 + 2 * S2  where
+      from math import (pi)
+      let S1 = 2 * pi * r * h
+      let S2 = pi * r ** 2
+end

@@ -5,7 +5,9 @@ from remlang.compiler.err import Trace
 from .compiler.ast import rem_eval, MetaInfo, rem_parser
 from .intepreter import repl, main
 from .console import Colored
-
+import warnings, logging
+warnings.filterwarnings("ignore")
+logger = logging.Logger('rem-exec')
 
 def execute(src: str, env: dict, path: str):
     rem_eval(env['__compiler__']
@@ -46,8 +48,10 @@ def run():
     elif args.file:
         with open(args.file[0], 'r') as f:
             src = f.read()
-
-        execute(src, main, os.path.abspath(args.file[0]))
+        try:
+            execute(src, main, os.path.abspath(args.file[0]))
+        except Exception as e:
+            logger.error(Colored.LightBlue+str(e)+Colored.Clear)
 
 
     else:

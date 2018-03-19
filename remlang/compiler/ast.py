@@ -85,7 +85,6 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
             # RuikoEBNF:
             # let  Throw ['=' '!']
             #   ::= ['`let`'] symbol ['!' trailer+] '=' expr;
-
             to_new_ctx = False
 
             symbol: 'Tokenizer'
@@ -104,7 +103,7 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
             res = ast_for_expr(expr, ctx)
             if not trailers:
                 # let symbol = ...
-                ctx.set_local(symbol.string, res)
+                ctx.set_local(symbol.string, res) if to_new_ctx else ctx.set_nonlocal(symbol.string, res)
                 return
 
             # let symbol 'attr = ... | let symbol ![item] = ...

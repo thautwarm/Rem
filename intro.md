@@ -311,7 +311,6 @@ let class = {
             |tp|
             case tp as k, v 
                 => 
-                    
                     self. set k (v self)
             end
         }
