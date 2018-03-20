@@ -107,18 +107,19 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
                 return
 
             # let symbol 'attr = ... | let symbol ![item] = ...
-            ref = ctx.local if to_new_ctx else ctx.get_nonlocal_env(symbol.string)
+            ref = ctx.get_nonlocal(symbol.string)
+
             fst_n: 'List[Ast]'
             last: 'Union[Tokenizer, Ast]'
-            *fst_n, [last, ] = trailers
+            *fst_n, [last] = trailers
 
             # `trailers` is a list of trailer.
             # RuikoEBNF:
             # trailer Throw ['[' ']' '.']
             #   ::= '[' exprCons ']' | '\'' symbol;
             each: 'Union[Ast, Tokenizer]'
-            for each, in fst_n:
 
+            for each, in fst_n:
                 if each.name is UNameEnum.symbol:  # symbol
                     ref = getattr(ref, each.string)
 
@@ -335,7 +336,8 @@ def ast_for_factor(factor: 'Ast', ctx: 'ReferenceDict'):
     # assert factor.name == 'factor'
     unary_op: 'Tokenizer' = None
     suffix: 'Tokenizer' = None
-    if factor[0].name is UNameEnum.unaryOp:
+    n = len(factor)
+    if n is 3:
         if factor[-1].name is UNameEnum.suffix:
             unary_op, inv, suffix = factor
         else:
@@ -573,7 +575,7 @@ def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
     if n is 1:
         lambdef, = lambdef
         if lambdef.name is UNameEnum.singleArgs:  # singleArgs
-            return Fn(list(each.string for each in lambdef), {}, (ctx, None))
+            return Fn(list(each.string for each in lambdef), {}, (ctx, ()))
         else:
             return Fn((), {}, (ctx, lambdef))
 

@@ -12,6 +12,7 @@ import argparse
 
 cmd_parser = argparse.ArgumentParser()
 cmd_parser.add_argument('--file', nargs='?', type=str)
+cmd_parser.add_argument('--test', nargs='?', type=bool, default=False, const=True)
 
 warnings.filterwarnings("ignore")
 logger = logging.Logger('irem')
@@ -26,6 +27,7 @@ _input = input
 
 def repl():
     args = cmd_parser.parse_args()
+    testing = args.test
     if args.file:
         file_src = iter(grace_open(args.file).read().splitlines())
         std_input = _input
@@ -48,9 +50,11 @@ def repl():
             input = std_input
             continue
         except KeyboardInterrupt:
-            import sys
-            print(Colored.Green, '\n   Good Bye~')
-            sys.exit(0)
+            src.clear()
+            errs.clear()
+            count = None
+            print()
+            continue
 
         if not inp:
             continue
@@ -63,6 +67,10 @@ def repl():
         elif inp == ':vars':
             print(Colored.Purple2, pformat(main.local))
             continue
+        elif inp == ':q':
+            print(Colored.Green, '\n   Good Bye~')
+            import sys
+            sys.exit(0)
 
         meta = MetaInfo(fileName='<repr>')
         src.append(inp)
@@ -70,9 +78,13 @@ def repl():
             ret = main['__compiler__'].from_source_code('<eval input>',
                                                         '\n'.join(src),
                                                         meta=meta,
-                                                        partial=False)
+                                                        partial=False, print_token=testing)
+            if testing:
+                print(ret)
             try:
                 ret = ast_for_file(ret, main)
+                if testing:
+                    print(ret)
 
                 if count is not None:
                     count = None
@@ -88,7 +100,10 @@ def repl():
                         print(Colored.Purple, pformat(ret))
 
             except BaseException as e:
-                logger.error(Colored.LightBlue + str(e) + Colored.Clear)
+                if testing:
+                    logging.error(Colored.LightBlue + str(e) + Colored.Clear, exc_info=True)
+                else:
+                    logger.error(Colored.LightBlue + str(e) + Colored.Clear)
 
             src.clear()
             errs.clear()
@@ -104,6 +119,9 @@ def repl():
                 src.clear()
                 count = None
                 for e in errs:
-                    logger.error(Colored.LightBlue + str(e) + Colored.Clear)
+                    if testing:
+                        logging.error(Colored.LightBlue + str(e) + Colored.Clear, exc_info=True)
+                    else:
+                        logger.error(Colored.LightBlue + str(e) + Colored.Clear)
                 errs.clear()
                 continue

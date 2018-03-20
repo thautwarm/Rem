@@ -1,31 +1,33 @@
-Ignore [space comments]
+ignore [space comments]
+
+keyword  as K := 'then', 'when',   'and',    'or', 'not'
+                 'in',   'not',    'case',   'as'
+            	 'end',  'where',  'from',   'yield'
+            	 'into', 'let',    'True',   'False'
+            	 'None', 'import', 'is';
+
 refName  ::= ['&'] symbol;
 
 newline  := R'\n+';
 space    := R'\s+';
 symbol   := R'[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff_]{1}[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\d_]*';
 
-keyword  := 'then', 'when',   'and',    'or', 'not'
-            'in',   'not',    'case',   'as'
-            'end',  'where',  'from',   'yield'
-            'into', 'let',    'True',   'False'
-            'None', 'import', 'is';
-
-string   := R'[A-Z]"([^\"]+|\\.)*?"|\'([^\\\']+|\\.)*?\'';
+string   := R'"([^\"]+|\\.)*?"';
 comments := R'(#.*)|(((/\*)+?[\w\W]+?(\*/)+))';
 number   := R'0[Xx][\da-fA-F]+|\d+(?:\.\d+|)(?:E\-{0,1}\d+|)';
 
 
-operator :=  '+',   '-',  '*',   '/',   '%'
-             '++',  '--', '**',  '//'
-             '^',   '&',  '|',   '>>',  '<<'
-             '^^',  '&&', '||'
-             '|>'
-             '>',   '<', '>=', '<='
-             '==',  '!='
-             '<-';
+operator :=    '>>',  '<<'
+               '++',  '--', '**',  '//'
+               '^^',  '&&', '||'
+               '|>'   '>=', '<='
+               '==',  '!=' '<-',
+               '+',   '-',  '*',   '/',   '%'
+                '>',   '<',
+               '^',   '&';
 
 T       ::= newline+;
+
 importAs
         ::= symbol ['as' symbol];
 
@@ -38,7 +40,7 @@ importExpr
 singleImportExpr
         ::= 'import' singleArgs ['as' symbol];
 
-remImport Throw ['import', 'as']
+remImport throw ['import', 'as']
         ::= 'import' string [ 'as' symbol];
 
 
@@ -47,26 +49,25 @@ const   ::= 'True' | 'False' | 'None';
 
 
 # lambda currently does not support argument destruction.
-singleArgs Throw [',' T]
+singleArgs throw [',' T]
         ::= symbol ([T] ',' [T] symbol)*;
 
 # for pattern matching
-argMany Throw [',' T]
+argMany throw [',' T]
         ::=  arg [([T] ',' [T] arg)+  [T]] [iterMark];
 
 iterMark::= ',';
-arg  Throw ['++']
-        ::= ['...'] '_'      |
+arg     ::= ['...'] '_'      |
             ['...']  refName |
               tupleArg       |
               string         |
               const          |
               number         ;
 
-tupleArg Throw ['(' ')', '[', ']' T]
+tupleArg throw ['(' ')', '[', ']' T]
         ::= '(' [T] [argMany [T]] ')'| '[' [T] [argMany [T]] ']';
 
-lambdef Throw ['{', '}', '|', ',', 'from', 'let', 'end', T]
+lambdef throw ['{', '}', '|', ',', 'from', 'let', 'end', T]
         ::= '{' [T]
                 ['|' [singleArgs [T]] '|']
                 [T]
@@ -80,35 +81,33 @@ lambdef Throw ['{', '}', '|', ',', 'from', 'let', 'end', T]
             'end'
             ;
 
-atom  Throw ['++']
+atom  throw ['++']
         ::=  refName | const | string ('++' string)* | number |
             '(' expr ')'|
              listCons | tupleCons | setCons | dictCons | compreh |
              lambdef;
 
-trailer Throw ['!' '[' ']' '\'']
+trailer throw ['!' '[' ']' '\'']
         ::= '!' '[' exprCons ']' | '\'' symbol;
 
-atomExpr Throw[T]
+atomExpr throw[T]
         ::= atom ([T] trailer)*;
 
 
 invExp  ::= atomExpr (atomExpr | invTrailer)*;
 
-invTrailer Throw ['.']
+invTrailer throw ['.']
         ::= '.' atomExpr;
 
-unaryOp := 'not', '+', '-';
-suffix  := '?', '??';
-factor  ::= [unaryOp] invExp [suffix];
+suffix  := '??' '?';
+factor  ::= ['not' | '+' | '-'] invExp [suffix];
 
+binExp ::= factor ((operator | 'or' | 'and' | 'in' | 'is') factor)*;
 
-binExp ::= factor ((operator | 'or' | 'and' | 'in' | 'is' | 'is not' | 'not in') factor)*;
-
-caseExp Throw ['case', 'end', T]
+caseExp throw ['case', 'end', T]
         ::= 'case' expr [T] asExp* 'end';
 
-asExp  Throw ['=>', T, 'as', 'when']
+asExp  throw ['=>', T, 'as', 'when']
         ::= ['as' argMany]
             [
               [T] 'when' [T] expr
@@ -118,40 +117,40 @@ asExp  Throw ['=>', T, 'as', 'when']
 
 testExpr ::= caseExp | binExp;
 
-where Throw ['where', T, 'end']   ::= 'where' [T] [statements [T]] 'end';
+where throw ['where', T, 'end']   ::= 'where' [T] [statements [T]] 'end';
 
 expr    ::=  testExpr (thenTrailer | applicationTrailer)* [[T] where];
 
-thenTrailer Throw ['then']
+thenTrailer throw ['then']
         ::= 'then' testExpr;
 
-applicationTrailer Throw ['$']
+applicationTrailer throw ['$']
         ::= '$' testExpr;
 
-statements Throw [T]
+statements throw [T]
         ::= statement ([T] statement)*;
 
 statement
         ::= (label | let | expr | into | importExpr) [';'];
 
-let    Throw ['=' '!']
+let    throw ['=' '!']
         ::= ['let'] symbol trailer* '=' expr;
 
-exprMany Throw [',', T] ::= expr [([T] ',' [T] expr)+];
-unpack   Throw ['...']  ::= '...' expr;
-exprCons Throw [',' T]    ::= exprMany ([T] ',' [T] unpack [[T] ',' [T] exprMany])* [','];
+exprMany throw [',', T] ::= expr [([T] ',' [T] expr)+];
+unpack   throw ['...']  ::= '...' expr;
+exprCons throw [',' T]    ::= exprMany ([T] ',' [T] unpack [[T] ',' [T] exprMany])* [','];
 
-kv       Throw [':', T] ::= expr ':' expr;
-kvMany   Throw [',', T] ::= kv [([T] ',' [T] kv)+  [T]];
-kvCons   Throw [',' T]  ::= kvMany ([T] ',' [T] unpack [[T] ',' [T] kvMany])* [','];
+kv       throw [':', T] ::= expr ':' expr;
+kvMany   throw [',', T] ::= kv [([T] ',' [T] kv)+  [T]];
+kvCons   throw [',' T]  ::= kvMany ([T] ',' [T] unpack [[T] ',' [T] kvMany])* [','];
 
-listCons  Throw ['[' ']' T] ::= '[' [T] [exprCons [T]] ']';
-tupleCons  Throw ['(' ')' T] ::= '(' [T] [exprCons [T]] ')';
-setCons  Throw ['%' '{' '}' T] ::=  '%' '{' [T] [exprCons [T]] '}';
-dictCons  Throw ['%' '{' '}' T] ::=  '%' '{' [T] [kvCons [T]] '}';
-compreh  Throw['from' 'yield' T] ::=  'from' [T] exprMany [[T] 'not'] [T] 'yield' [T] lambdef;
+listCons  throw ['[' ']' T] ::= '[' [T] [exprCons [T]] ']';
+tupleCons  throw ['(' ')' T] ::= '(' [T] [exprCons [T]] ')';
+setCons  throw ['%' '{' '}' T] ::=  '%' '{' [T] [exprCons [T]] '}';
+dictCons  throw ['%' '{' '}' T] ::=  '%' '{' [T] [kvCons [T]] '}';
+compreh  throw['from' 'yield' T] ::=  'from' [T] exprMany [[T] 'not'] [T] 'yield' [T] lambdef;
 
-label Throw ['@'] ::= '@' symbol;
-into Throw ['into'] ::= 'into' symbol;
+label throw ['@'] ::= '@' symbol;
+into throw ['into'] ::= 'into' symbol;
 
-file Throw [T] ::= [T] [statements [T]];
+file throw [T] ::= [T] [statements [T]];

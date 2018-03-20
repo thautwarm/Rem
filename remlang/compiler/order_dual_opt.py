@@ -84,16 +84,16 @@ bin_op_fns = {
 
 
 def order_dual_opt(seq):
-    if len(seq) <= 3:
-        return seq
+    if len(seq) is 3:
+        return BinExp(*seq)
 
+    linked_list = RevLinkedList.from_iter(seq)
     arg_indices = argsort([op_priority[e] for e in seq if isinstance(e, str)])
     arg_indices.reverse()
 
     indices = [idx for idx, e in enumerate(seq) if isinstance(e, str)]
     indices.reverse()
 
-    linked_list = RevLinkedList.from_iter(seq)
     op_nodes = sorted((e for e in linked_list if isinstance(e.content, str)), key=lambda x: op_priority[x.content],
                       reverse=True)
 
@@ -101,12 +101,20 @@ def order_dual_opt(seq):
     for each in op_nodes:
         bin_expr = BinExp(each.prev.content, each.content, each.next.content)
         each.content = bin_expr
-
-        if each.prev.prev:
+        try:
             each.prev.prev.next = each
-        if each.next.next:
+            each.prev = each.prev.prev
+        except AttributeError:
+            pass
+
+
+        try:
             each.next.next.prev = each
+            each.next = each.next.next
+        except AttributeError:
+            pass
 
-    return each.content
+    return bin_expr
 
-# print(order_dual_opt([1, '*', 2, '**', 3, '+', 4, '*', 1]))
+
+print(order_dual_opt([1, '+', 2, '*', 3, '/', 4]))
