@@ -22,7 +22,7 @@ setup(
     platforms='any',
     install_requires=[
         'toolz',
-        'EBNFParser >= 2.0'
+        'EBNFParser >= 2.1'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.6',
