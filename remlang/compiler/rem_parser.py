@@ -26,10 +26,12 @@ token_table = ((unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
                (unique_literal_cache_pool["suffix"], char_matcher(('?'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('not'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('-', '+'))),
-               (unique_literal_cache_pool["auto_const"], str_matcher(('where', 'when', 'then', 'or', 'is', 'in', 'case', 'and', '=>'))),
+               (unique_literal_cache_pool["auto_const"], str_matcher(('where', 'when', 'or', 'is', 'in', 'case', 'and', '=>'))),
+               (unique_literal_cache_pool["auto_const"], char_matcher(('`'))),
+               (unique_literal_cache_pool["auto_const"], str_matcher(('then'))),
                (unique_literal_cache_pool["auto_const"], char_matcher((';', '$'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('='))),
-               (unique_literal_cache_pool["auto_const"], char_matcher((':'))),
+               (unique_literal_cache_pool["auto_const"], char_matcher((':', '%'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('yield'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('@'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('into'))))
@@ -220,7 +222,8 @@ testExpr = AstParser([Ref('caseExp')],
 where = AstParser(['where', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'end'],
                   name="where",
                   to_ignore=({"T"}, {'where', 'end'}))
-expr = AstParser([Ref('testExpr'), SeqParser([Ref('thenTrailer')], [Ref('applicationTrailer')], at_least=0,at_most=Undef), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('where')], at_least=0,at_most=1)],
+expr = AstParser(['`', Ref('expr')],
+                 [Ref('testExpr'), SeqParser([Ref('thenTrailer')], [Ref('applicationTrailer')], at_least=0,at_most=Undef), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('where')], at_least=0,at_most=1)],
                  name="expr",
                  to_ignore=({}, {}))
 thenTrailer = AstParser(['then', Ref('testExpr')],
@@ -262,10 +265,10 @@ listCons = AstParser(['[', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParse
 tupleCons = AstParser(['(', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('exprCons'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), ')'],
                       name="tupleCons",
                       to_ignore=({"T"}, {'(', ')'}))
-setCons = AstParser([L('%'), '{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('exprCons'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
+setCons = AstParser(['%', '{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('exprCons'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
                     name="setCons",
                     to_ignore=({"T"}, {'%', '{', '}'}))
-dictCons = AstParser([L('%'), '{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('kvCons'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
+dictCons = AstParser(['%', '{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('kvCons'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
                      name="dictCons",
                      to_ignore=({"T"}, {'%', '{', '}'}))
 compreh = AstParser(['from', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('exprMany'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), 'not'], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), 'yield', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('lambdef')],

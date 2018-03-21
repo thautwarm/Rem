@@ -119,7 +119,7 @@ testExpr ::= caseExp | binExp;
 
 where throw ['where', T, 'end']   ::= 'where' [T] [statements [T]] 'end';
 
-expr    ::=  testExpr (thenTrailer | applicationTrailer)* [[T] where];
+expr    ::= '`' expr | testExpr (thenTrailer | applicationTrailer)* [[T] where];
 
 thenTrailer throw ['then']
         ::= 'then' testExpr;

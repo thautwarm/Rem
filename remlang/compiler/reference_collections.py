@@ -6,6 +6,8 @@ class ReferenceDict:
 
     def __init__(self, src: Optional[dict], parent: 'Optional[ReferenceDict]' = None, module_manager=None):
         self.local = src
+        self.local['__env__'] = self
+
         self.module_manager = module_manager
 
         self.parent = parent

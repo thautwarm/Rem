@@ -115,6 +115,3 @@ def order_dual_opt(seq):
             pass
 
     return bin_expr
-
-
-print(order_dual_opt([1, '+', 2, '*', 3, '/', 4]))

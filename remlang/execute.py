@@ -2,15 +2,17 @@ import argparse
 import os
 
 from remlang.compiler.err import Trace
-from .compiler.ast import rem_eval, MetaInfo, rem_parser
+from .compiler.ast import ast_for_file, MetaInfo, rem_parser
 from .intepreter import repl, main
 from .console import Colored
 import warnings, logging
+
 warnings.filterwarnings("ignore")
 logger = logging.Logger('rem-exec')
 
+
 def execute(src: str, env: dict, path: str):
-    rem_eval(env['__compiler__']
+    ast_for_file(env['__compiler__']
         .from_source_code(
         path,
         src,
@@ -51,7 +53,7 @@ def run():
         try:
             execute(src, main, os.path.abspath(args.file[0]))
         except Exception as e:
-            logger.error(Colored.LightBlue+str(e)+Colored.Clear)
+            logger.error(Colored.LightBlue + str(e) + Colored.Clear)
 
 
     else:

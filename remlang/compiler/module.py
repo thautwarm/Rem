@@ -20,7 +20,7 @@ default_env = ReferenceDict(
 def make_new_module(name: str, module_manager: 'ReferenceDict', compiler: 'ErrorHandler' = None):
     """make a new module
     """
-    env = ReferenceDict(default.default, module_manager=module_manager)
+    env = ReferenceDict(default.default.copy(), module_manager=module_manager)
     env.update(
         __name__=name,
         OperatorPriority=op_priority,
@@ -37,4 +37,17 @@ def make_new_module(name: str, module_manager: 'ReferenceDict', compiler: 'Error
 def md5(path) -> 'Tuple[str, str]':
     with open(path, 'r') as f:
         src = f.read()
-    return src, hashlib.md5(src).hexdigest()
+    return src, hashlib.md5(src.encode()).hexdigest()
+
+
+class ModuleAgent:
+    __slots__ = ['_']
+
+    def __init__(self, module: dict):
+        self._ = module
+
+    def __getattr__(self, item):
+        try:
+            return self._[item]
+        except KeyError:
+            raise NameError(f'{self._["__name__"]}.{item}')

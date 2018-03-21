@@ -8,9 +8,9 @@ from .reference_collections import ReferenceDict
 from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns
 from .rem_parser import file, token_table, UNameEnum, Tokenizer
 from .utils import flatten
-from .module import default_env, make_new_module, md5
+from .module import default_env, make_new_module, md5, ModuleAgent
 from .pattern_matching import pattern_match, unmatched
-from .control_flow import BreakUntil
+from .control_flow import BreakUntil, Macro
 from .err import Trace
 from .tk import keywords_map
 
@@ -19,10 +19,10 @@ rem_parser = ErrorHandler(file.match, token_func)
 
 
 # default settings. eval
-def add_eval_func(to: 'ReferenceDict'):
+def add_exec_func(to: 'ReferenceDict'):
     to['__compiler__'] = rem_parser
-    to['eval'] = lambda src: ast_for_file(
-        to['__compiler__'](
+    to['exec'] = lambda src: ast_for_file(
+        to['__compiler__'].from_source_code(
             '<eval input>',
             src,
             MetaInfo(fileName='<eval input>')),
@@ -31,7 +31,7 @@ def add_eval_func(to: 'ReferenceDict'):
 
 # this is the main module
 main = make_new_module('main', default_env)
-add_eval_func(to=main)
+add_exec_func(to=main)
 
 const_map = {'r': True, 'a': False, 'o': None}
 
@@ -73,8 +73,7 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
                 # end with ';' then return None
                 ast_for_expr(sexpr, ctx)
             else:
-                res = ast_for_expr(sexpr, ctx)
-                return res
+                return ast_for_expr(sexpr, ctx)
 
         elif s_name is UNameEnum.label:
             [symbol] = sexpr
@@ -166,14 +165,14 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
                 return
             import os
             string: 'Tokenizer'
-            if len(sexpr) is 2:
-                string, symbol = sexpr
+            if len(branch) is 2:
+                string, symbol = branch
                 path = string.string
                 name = symbol.string
             else:
-                [string] = sexpr
+                [string] = branch
                 path = string.string
-                name = name = os.path.split(
+                name = os.path.split(
                     os.path.splitext(path)[0])[1]
 
             path = eval(path)
@@ -188,9 +187,10 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
 
             managed_modules[path] = md5_v
             env = make_new_module(name, manager, ctx['__compiler__'])
-            add_eval_func(to=env)
-            rem_eval(env['__compiler__'].from_source_code(path, src_code, MetaInfo(fileName=path)), env)
-            ctx.set_local(name, env)
+            add_exec_func(to=env)
+            ast_for_file(env['__compiler__'].from_source_code(path, src_code, MetaInfo(fileName=path)),
+                         env)
+            ctx.set_local(name, ModuleAgent(env.local))
 
         else:
             raise TypeError('unknown statement.')
@@ -207,6 +207,10 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
             [where];
     """
     # assert expr.name == 'expr'
+
+    if expr[0].__class__ is Tokenizer:
+        return Macro(expr[1])
+
     if expr[-1].name is UNameEnum.where:  # where
         head, *then_trailers, where = expr
         stmts = where[0]
@@ -220,6 +224,10 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
     for each in then_trailers:
         arg = ast_for_test_expr(each[0], ctx)
         res = arg(res) if each.name is UNameEnum.thenTrailer else res(arg)
+
+    if res.__class__ is Macro:
+        return ast_for_expr(res.expr, ctx)
+
     return res
 
 
@@ -301,7 +309,7 @@ def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
 
 def ast_for_bin_expr(bin_expr: 'Ast', ctx: 'ReferenceDict'):
     """
-    binExp ::= factor ( (operator | 'or' | 'and' | 'in' | 'is' | 'is not' | 'not in') factor)*;
+    binExp ::= factor ( (operator | 'or' | 'and' | 'in' | 'is') factor)*;
     """
     if len(bin_expr) is not 1:
         bin_expr = [each.string if each.__class__ is Tokenizer else each for each in bin_expr]
@@ -435,7 +443,10 @@ def ast_for_atom(atom: 'Ast', ctx: 'ReferenceDict'):
             if len(sexpr) is 2:
                 return RefName(sexpr[1].string)
 
-            return ctx.get_nonlocal(sexpr[0].string)
+            ret = ctx.get_nonlocal(sexpr[0].string)
+            if ret.__class__ is Macro:
+                return ast_for_expr(ret.expr, ctx)
+            return ret
 
         elif s_name is UNameEnum.const:
             sign = sexpr[0].string[1]
@@ -512,7 +523,7 @@ def ast_for_kv_cons(expr_cons: Ast, ctx: ReferenceDict):
                 yield ast_for_expr(k, ctx), ast_for_expr(v, ctx)
 
 
-def _scp(f, xs):
+def _cps(f, xs):
     for e in xs:
         f = f(e)
     return f
@@ -540,11 +551,11 @@ def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
         lambdef = ast_for_lambdef(lambdef, new_ctx)
 
         if is_yield:
-            return (_scp(lambdef, each) for each in cartesian_prod_collections)
+            return (_cps(lambdef, each) for each in cartesian_prod_collections)
 
         e = None
         for each in cartesian_prod_collections:
-            e = _scp(lambdef, each)
+            e = _cps(lambdef, each)
 
         return e
 
@@ -591,13 +602,12 @@ def ast_for_file(file_source_parsed: 'Ast', ctx: 'ReferenceDict'):
         return ast_for_statements(file_source_parsed[0], ctx)
 
 
-def rem_eval(ast: 'Ast', env: 'ReferenceDict'):
-    ast_for_file(ast, env)
-    return env
+def rem_eval(ast: 'Ast'):
+    return lambda ctx: ast_for_expr(ast, ctx)
 
 
 class Fn:
-    __slots__ = ['uneval_args', 'eval_args', 'body', 'just_raise']
+    __slots__ = ['uneval_args', 'eval_args', 'body']
 
     def __init__(self, uneval, eval, body):
         self.uneval_args = uneval

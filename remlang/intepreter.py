@@ -75,29 +75,29 @@ def repl():
         meta = MetaInfo(fileName='<repr>')
         src.append(inp)
         try:
-            ret = main['__compiler__'].from_source_code('<eval input>',
+            ans = main['__compiler__'].from_source_code('<eval input>',
                                                         '\n'.join(src),
                                                         meta=meta,
                                                         partial=False, print_token=testing)
             if testing:
-                print(ret)
+                print(ans)
             try:
-                ret = ast_for_file(ret, main)
+                ans = ast_for_file(ans, main)
                 if testing:
-                    print(ret)
-
+                    print(ans)
+                main['ans'] = ans
                 if count is not None:
                     count = None
-                if ret is not None and not isinstance(ret, BreakUntil):
+                if ans is not None and not isinstance(ans, BreakUntil):
                     print(Colored.Green, '=> ', end='')
-                    if any(map(lambda x: isinstance(ret, x),
+                    if any(map(lambda x: isinstance(ans, x),
                                (list, dict, set))):  # mutable
-                        print(Colored.Blue, pformat(ret))
-                    elif any(map(lambda x: isinstance(ret, x),
+                        print(Colored.Blue, pformat(ans))
+                    elif any(map(lambda x: isinstance(ans, x),
                                  (str, int, float, complex, tuple))):  # immutable
-                        print(Colored.LightBlue, pformat(ret))
+                        print(Colored.LightBlue, pformat(ans))
                     else:
-                        print(Colored.Purple, pformat(ret))
+                        print(Colored.Purple, pformat(ans))
 
             except BaseException as e:
                 if testing:

@@ -9,9 +9,10 @@ from ..compiler.utils import cast, to_chinese
 
 from .syntax import *
 from .io import *
+from .module import *
 
 LICENSE_INFO = """
-Rem Language 0.3.2 alpha, March 15 2018 02:14. 
+Rem Language 0.4.0 alpha, March 21 2018 06:47. 
 Backend CPython, Author thautwarm, MIT License.
 Report at https://github.com/thautwarm/Rem/issues.
 """
@@ -60,4 +61,5 @@ default = {
     'raise': rem_raise,
     'if': rem_if,
     'else': rem_else,
+    'apply_module': apply_module
 }
