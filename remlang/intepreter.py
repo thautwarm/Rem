@@ -70,7 +70,7 @@ def repl():
         elif inp == ':q':
             print(Colored.Green, '\n   Good Bye~')
             import sys
-            sys.exit(0)
+            return "End Rem Session."
 
         meta = MetaInfo(fileName='<repr>')
         src.append(inp)

@@ -1,15 +1,15 @@
-try:
-    from cytoolz import curry
-except ModuleNotFoundError:
-    from toolz import curry
+from .curry import curry
 
 from functools import reduce
-from collections import Iterable, OrderedDict
+from collections import Iterable, OrderedDict, Iterator
+
 from ..compiler.utils import cast, to_chinese
 
 from .syntax import *
 from .io import *
 from .module import *
+from .path import Path
+from .collections import *
 
 LICENSE_INFO = """
 Rem Language 0.4.0 alpha, March 21 2018 06:47. 
@@ -22,13 +22,14 @@ class Object:
     pass
 
 
-def xrange(arg):
-    if not isinstance(arg, tuple):
-        return range(arg)
-    return range(*arg)
-
-
 default = {
+    # syntax
+    'err': rem_raise,
+    'foreach': foreach,
+    'while': rem_while,
+    'if': rem_if,
+    'else': rem_else,
+
     'list': list,
     'tuple': tuple,
     'hashset': set,
@@ -39,27 +40,42 @@ default = {
     'print': print,
     'help': help,
     'get': curry(getattr),
+    'set': curry(setattr),
+
+    # collections
+    'chunk_by': chunk_by,
+    'chunk': chunk,
     'filter': curry(lambda collection, f: filter(f, collection)),
     'map': curry(lambda collection, f: map(f, collection)),
-    'reduce': curry(reduce),
+    'reduce': curry(lambda collection, f: reduce(f, collection)),
     'fold': curry(lambda collection, f, init: reduce(f, collection, init)),
+    'fst': fst,
+    'snd': snd,
+    'slice': rem_slice,
+    'indexer': indexer,
+
+    # function helper
     'call': lambda f: f(),
+
+    # IO
     'write': write,
     'read': read,
     'open': open_file,
     'cast': cast,
     'to_chinese': to_chinese,
     'range': xrange,
-    'foreach': foreach,
-    'while': rem_while,
-    'slice': rem_slice,
-    'indexer': indexer,
+    'append': append,
+
     'Object': Object,
-    'set': curry(setattr),
+
     'len': len,
-    'isa': curry(isinstance),
-    'raise': rem_raise,
-    'if': rem_if,
-    'else': rem_else,
-    'apply_module': apply_module
+    'is_inst_of': curry(isinstance),
+    'is_type_of': curry(lambda type, inst: isinstance(inst, type)),
+
+    'apply_module': apply_module,
+    'path': Path,
+
+    'string': str,
+    'int': int,
+    'float': float
 }

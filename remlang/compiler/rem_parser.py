@@ -10,18 +10,19 @@ token_table = ((unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
                (unique_literal_cache_pool["string"], regex_matcher('"([^\"]+|\\.)*?"')),
                (unique_literal_cache_pool["comments"], regex_matcher('(#.*)|(((/\*)+?[\w\W]+?(\*/)+))')),
                (unique_literal_cache_pool["number"], regex_matcher('0[Xx][\da-fA-F]+|\d+(?:\.\d+|)(?:E\-{0,1}\d+|)')),
-               (unique_literal_cache_pool["operator"], str_matcher(('||', '|>', '^^', '>>', '>=', '==', '<=', '<<', '<-', '//', '--', '++', '**', '&&', '!='))),
+               (unique_literal_cache_pool["operator"], str_matcher(('||', '|>', '^^', '>>', '>=', '==', '<=', '<<', '<-', '::', '//', '--', '++', '**', '&&', '!='))),
                (unique_literal_cache_pool["operator"], char_matcher(('^', '>', '<', '/', '-', '+', '*', '&', '%'))),
-               (unique_literal_cache_pool["auto_const"], str_matcher(('import', 'from', 'as'))),
+               (unique_literal_cache_pool["auto_const"], str_matcher(('from', 'as'))),
+               (unique_literal_cache_pool["auto_const"], char_matcher(('.'))),
+               (unique_literal_cache_pool["auto_const"], str_matcher(('import'))),
                (unique_literal_cache_pool["auto_const"], char_matcher((',', ')', '('))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('True', 'None', 'False'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('...'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('_'))),
-               (unique_literal_cache_pool["auto_const"], char_matcher(('}', '|', '{', ']', '['))),
+               (unique_literal_cache_pool["auto_const"], char_matcher(('}', '|', '{', ']', '[', ':'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('let', 'end', '++'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('!'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('\''))),
-               (unique_literal_cache_pool["auto_const"], char_matcher(('.'))),
                (unique_literal_cache_pool["suffix"], str_matcher(('??'))),
                (unique_literal_cache_pool["suffix"], char_matcher(('?'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('not'))),
@@ -31,7 +32,7 @@ token_table = ((unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('then'))),
                (unique_literal_cache_pool["auto_const"], char_matcher((';', '$'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('='))),
-               (unique_literal_cache_pool["auto_const"], char_matcher((':', '%'))),
+               (unique_literal_cache_pool["auto_const"], char_matcher(('%'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('yield'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('@'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('into'))))
@@ -69,16 +70,21 @@ class UNameEnum:
     operator = unique_literal_cache_pool['operator']
     T = unique_literal_cache_pool['T']
     importAs = unique_literal_cache_pool['importAs']
-    fromImportExpr = unique_literal_cache_pool['fromImportExpr']
-    importExpr = unique_literal_cache_pool['importExpr']
-    singleImportExpr = unique_literal_cache_pool['singleImportExpr']
+    fromImportStmt = unique_literal_cache_pool['fromImportStmt']
+    importStmt = unique_literal_cache_pool['importStmt']
+    singleImportStmt = unique_literal_cache_pool['singleImportStmt']
     remImport = unique_literal_cache_pool['remImport']
     const = unique_literal_cache_pool['const']
     singleArgs = unique_literal_cache_pool['singleArgs']
-    argMany = unique_literal_cache_pool['argMany']
+    patMany = unique_literal_cache_pool['patMany']
     iterMark = unique_literal_cache_pool['iterMark']
-    arg = unique_literal_cache_pool['arg']
-    tupleArg = unique_literal_cache_pool['tupleArg']
+    pat = unique_literal_cache_pool['pat']
+    noZipPat = unique_literal_cache_pool['noZipPat']
+    noZipPatMany = unique_literal_cache_pool['noZipPatMany']
+    tuplePat = unique_literal_cache_pool['tuplePat']
+    kvPat = unique_literal_cache_pool['kvPat']
+    kvPatMany = unique_literal_cache_pool['kvPatMany']
+    dictPat = unique_literal_cache_pool['dictPat']
     lambdef = unique_literal_cache_pool['lambdef']
     atom = unique_literal_cache_pool['atom']
     trailer = unique_literal_cache_pool['trailer']
@@ -133,16 +139,16 @@ T = AstParser([SeqParser([Ref('newline')], at_least=1,at_most=Undef)],
 importAs = AstParser([Ref('symbol'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
                      name="importAs",
                      to_ignore=({}, {}))
-fromImportExpr = AstParser(['from', Ref('singleArgs'), 'import', '(', Ref('importAs'), SeqParser([',', Ref('importAs')], at_least=0,at_most=Undef), ')'],
-                           name="fromImportExpr",
+fromImportStmt = AstParser(['from', Ref('symbol'), SeqParser(['.', Ref('symbol')], at_least=0,at_most=Undef), 'import', SeqParser([SeqParser([Ref('importAs')], at_least=1,at_most=Undef)], ['(', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('importAs'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('importAs')], at_least=0,at_most=Undef), ')'], at_least=1,at_most=1)],
+                           name="fromImportStmt",
                            to_ignore=({}, {}))
-importExpr = AstParser([Ref('singleImportExpr')],
-                       [Ref('fromImportExpr')],
+importStmt = AstParser([Ref('singleImportStmt')],
+                       [Ref('fromImportStmt')],
                        [Ref('remImport')],
-                       name="importExpr",
+                       name="importStmt",
                        to_ignore=({}, {}))
-singleImportExpr = AstParser(['import', Ref('singleArgs'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
-                             name="singleImportExpr",
+singleImportStmt = AstParser(['import', Ref('singleArgs'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
+                             name="singleImportStmt",
                              to_ignore=({}, {}))
 remImport = AstParser(['import', Ref('string'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
                       name="remImport",
@@ -155,26 +161,47 @@ const = AstParser(['True'],
 singleArgs = AstParser([Ref('symbol'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('symbol')], at_least=0,at_most=Undef)],
                        name="singleArgs",
                        to_ignore=({"T"}, {','}))
-argMany = AstParser([Ref('arg'), SeqParser([SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('arg')], at_least=1,at_most=Undef), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), SeqParser([Ref('iterMark')], at_least=0,at_most=1)],
-                    name="argMany",
+patMany = AstParser([Ref('pat'), SeqParser([SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('pat')], at_least=1,at_most=Undef), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), SeqParser([Ref('iterMark')], at_least=0,at_most=1)],
+                    name="patMany",
                     to_ignore=({"T"}, {','}))
 iterMark = AstParser([','],
                      name="iterMark",
                      to_ignore=({}, {}))
-arg = AstParser([SeqParser(['...'], at_least=0,at_most=1), '_'],
+pat = AstParser([SeqParser(['...'], at_least=0,at_most=1), '_'],
                 [SeqParser(['...'], at_least=0,at_most=1), Ref('refName')],
-                [Ref('tupleArg')],
+                [Ref('tuplePat')],
+                [Ref('dictPat')],
                 [Ref('string')],
                 [Ref('const')],
                 [Ref('number')],
-                name="arg",
+                name="pat",
                 to_ignore=({}, {}))
-tupleArg = AstParser(['(', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('argMany'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), ')'],
-                     ['[', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('argMany'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), ']'],
-                     name="tupleArg",
+noZipPat = AstParser([Ref('refName')],
+                     [Ref('tuplePat')],
+                     [Ref('dictPat')],
+                     [Ref('string')],
+                     [Ref('const')],
+                     [Ref('number')],
+                     name="noZipPat",
+                     to_ignore=({}, {}))
+noZipPatMany = AstParser([Ref('noZipPat'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('noZipPat')], at_least=0,at_most=Undef)],
+                         name="noZipPatMany",
+                         to_ignore=({"T"}, {','}))
+tuplePat = AstParser(['(', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('patMany'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), ')'],
+                     ['[', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('patMany'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), ']'],
+                     name="tuplePat",
                      to_ignore=({"T"}, {'(', ')', '[', ']'}))
-lambdef = AstParser(['{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser(['|', SeqParser([Ref('singleArgs'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '|'], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
-                    ['from', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('singleArgs'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'let', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'end'],
+kvPat = AstParser([Ref('expr'), ':', Ref('noZipPat')],
+                  name="kvPat",
+                  to_ignore=({}, {':'}))
+kvPatMany = AstParser([Ref('kvPat'), SeqParser([SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('kvPat')], at_least=1,at_most=Undef), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), SeqParser([','], at_least=0,at_most=1)],
+                      name="kvPatMany",
+                      to_ignore=({"T"}, {','}))
+dictPat = AstParser(['{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('kvPatMany'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
+                    name="dictPat",
+                    to_ignore=({"T"}, {'{', '}'}))
+lambdef = AstParser(['{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser(['|', SeqParser([SeqParser([Ref('singleArgs')], [Ref('noZipPatMany')], at_least=1,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '|'], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
+                    ['from', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([SeqParser([Ref('singleArgs')], [Ref('noZipPatMany')], at_least=1,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'let', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'end'],
                     name="lambdef",
                     to_ignore=({"T"}, {'{', '}', '|', ',', 'from', 'let', 'end'}))
 atom = AstParser([Ref('refName')],
@@ -197,9 +224,9 @@ trailer = AstParser(['!', '[', Ref('exprCons'), ']'],
 atomExpr = AstParser([Ref('atom'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('trailer')], at_least=0,at_most=Undef)],
                      name="atomExpr",
                      to_ignore=({"T"}, {}))
-invExp = AstParser([Ref('atomExpr'), SeqParser([Ref('atomExpr')], [Ref('invTrailer')], at_least=0,at_most=Undef)],
+invExp = AstParser([Ref('atomExpr'), SeqParser([Ref('atomExpr')], [SeqParser([Ref('T')], at_least=0,at_most=1), Ref('invTrailer')], at_least=0,at_most=Undef)],
                    name="invExp",
-                   to_ignore=({}, {}))
+                   to_ignore=({"T"}, {}))
 invTrailer = AstParser(['.', Ref('atomExpr')],
                        name="invTrailer",
                        to_ignore=({}, {'.'}))
@@ -212,7 +239,7 @@ binExp = AstParser([Ref('factor'), SeqParser([SeqParser([Ref('operator')], ['or'
 caseExp = AstParser(['case', Ref('expr'), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('asExp')], at_least=0,at_most=Undef), 'end'],
                     name="caseExp",
                     to_ignore=({"T"}, {'case', 'end'}))
-asExp = AstParser([SeqParser(['as', Ref('argMany')], at_least=0,at_most=1), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), 'when', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('expr')], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser(['=>', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements')], at_least=0,at_most=1)], at_least=0,at_most=1)],
+asExp = AstParser([SeqParser(['as', Ref('patMany')], at_least=0,at_most=1), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), 'when', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('expr')], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser(['=>', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements')], at_least=0,at_most=1)], at_least=0,at_most=1)],
                   name="asExp",
                   to_ignore=({"T"}, {'=>', 'as', 'when'}))
 testExpr = AstParser([Ref('caseExp')],
@@ -223,9 +250,9 @@ where = AstParser(['where', SeqParser([Ref('T')], at_least=0,at_most=1), SeqPars
                   name="where",
                   to_ignore=({"T"}, {'where', 'end'}))
 expr = AstParser(['`', Ref('expr')],
-                 [Ref('testExpr'), SeqParser([Ref('thenTrailer')], [Ref('applicationTrailer')], at_least=0,at_most=Undef), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('where')], at_least=0,at_most=1)],
+                 [Ref('testExpr'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('thenTrailer')], [SeqParser([Ref('T')], at_least=0,at_most=1), Ref('applicationTrailer')], at_least=0,at_most=Undef), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('where')], at_least=0,at_most=1)],
                  name="expr",
-                 to_ignore=({}, {}))
+                 to_ignore=({"T"}, {}))
 thenTrailer = AstParser(['then', Ref('testExpr')],
                         name="thenTrailer",
                         to_ignore=({}, {'then'}))
@@ -235,7 +262,7 @@ applicationTrailer = AstParser(['$', Ref('testExpr')],
 statements = AstParser([Ref('statement'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('statement')], at_least=0,at_most=Undef)],
                        name="statements",
                        to_ignore=({"T"}, {}))
-statement = AstParser([SeqParser([Ref('label')], [Ref('let')], [Ref('expr')], [Ref('into')], [Ref('importExpr')], at_least=1,at_most=1), SeqParser([';'], at_least=0,at_most=1)],
+statement = AstParser([SeqParser([Ref('label')], [Ref('let')], [Ref('expr')], [Ref('into')], [Ref('importStmt')], at_least=1,at_most=1), SeqParser([';'], at_least=0,at_most=1)],
                       name="statement",
                       to_ignore=({}, {}))
 let = AstParser([SeqParser(['let'], at_least=0,at_most=1), Ref('symbol'), SeqParser([Ref('trailer')], at_least=0,at_most=Undef), '=', Ref('expr')],

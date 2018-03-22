@@ -17,7 +17,7 @@ comments := R'(#.*)|(((/\*)+?[\w\W]+?(\*/)+))';
 number   := R'0[Xx][\da-fA-F]+|\d+(?:\.\d+|)(?:E\-{0,1}\d+|)';
 
 
-operator :=    '>>',  '<<'
+operator :=    '>>',  '<<', '::'
                '++',  '--', '**',  '//'
                '^^',  '&&', '||'
                '|>'   '>=', '<='
@@ -31,13 +31,13 @@ T       ::= newline+;
 importAs
         ::= symbol ['as' symbol];
 
-fromImportExpr
-        ::= 'from' singleArgs 'import'  '(' importAs (',' importAs)* ')';
+fromImportStmt
+        ::= 'from' symbol ('.' symbol)* 'import'  (importAs+ | '(' [T] importAs ([T] ',' [T] importAs)* ')' );
 
-importExpr
-        ::= singleImportExpr | fromImportExpr | remImport;
+importStmt
+        ::= singleImportStmt | fromImportStmt | remImport;
 
-singleImportExpr
+singleImportStmt
         ::= 'import' singleArgs ['as' symbol];
 
 remImport throw ['import', 'as']
@@ -53,29 +53,45 @@ singleArgs throw [',' T]
         ::= symbol ([T] ',' [T] symbol)*;
 
 # for pattern matching
-argMany throw [',' T]
-        ::=  arg [([T] ',' [T] arg)+  [T]] [iterMark];
+patMany throw [',' T]
+        ::=  pat [([T] ',' [T] pat)+  [T]] [iterMark];
 
 iterMark::= ',';
-arg     ::= ['...'] '_'      |
+pat     ::= ['...'] '_'      |
             ['...']  refName |
-              tupleArg       |
+              tuplePat       |
+              dictPat        |
               string         |
               const          |
               number         ;
 
-tupleArg throw ['(' ')', '[', ']' T]
-        ::= '(' [T] [argMany [T]] ')'| '[' [T] [argMany [T]] ']';
+noZipPat ::= refName|tuplePat|dictPat|string|const|number;
+
+noZipPatMany throw [T, ',']
+        ::= noZipPat ([T] ',' [T] noZipPat)*;
+
+tuplePat throw ['(' ')', '[', ']' T]
+        ::= '('[T] [patMany [T]] ')'| '[' [T] [patMany [T]] ']';
+
+kvPat  throw [':']
+        ::= expr ':' noZipPat;
+
+kvPatMany throw [T, ',']
+        ::= kvPat [([T] ',' [T] kvPat)+  [T]] [','];
+
+dictPat throw ['{' '}' T]
+        ::= '{'[T] [kvPatMany [T]]'}';
+
 
 lambdef throw ['{', '}', '|', ',', 'from', 'let', 'end', T]
         ::= '{' [T]
-                ['|' [singleArgs [T]] '|']
+                ['|' [(singleArgs|noZipPatMany) [T]] '|']
                 [T]
                 [statements [T]]
             '}'
             |
             'from' [T]
-                [singleArgs [T]]
+                [(singleArgs|noZipPatMany) [T]]
             'let' [T]
                 [statements [T]]
             'end'
@@ -94,7 +110,8 @@ atomExpr throw[T]
         ::= atom ([T] trailer)*;
 
 
-invExp  ::= atomExpr (atomExpr | invTrailer)*;
+invExp throw [T]
+        ::= atomExpr (atomExpr |[T] invTrailer)*;
 
 invTrailer throw ['.']
         ::= '.' atomExpr;
@@ -108,7 +125,7 @@ caseExp throw ['case', 'end', T]
         ::= 'case' expr [T] asExp* 'end';
 
 asExp  throw ['=>', T, 'as', 'when']
-        ::= ['as' argMany]
+        ::= ['as' patMany]
             [
               [T] 'when' [T] expr
             ]
@@ -119,7 +136,8 @@ testExpr ::= caseExp | binExp;
 
 where throw ['where', T, 'end']   ::= 'where' [T] [statements [T]] 'end';
 
-expr    ::= '`' expr | testExpr (thenTrailer | applicationTrailer)* [[T] where];
+expr  throw [T]
+        ::= '`' expr | testExpr ([T] thenTrailer | [T] applicationTrailer)* [[T] where];
 
 thenTrailer throw ['then']
         ::= 'then' testExpr;
@@ -131,7 +149,7 @@ statements throw [T]
         ::= statement ([T] statement)*;
 
 statement
-        ::= (label | let | expr | into | importExpr) [';'];
+        ::= (label | let | expr | into | importStmt) [';'];
 
 let    throw ['=' '!']
         ::= ['let'] symbol trailer* '=' expr;

@@ -1,7 +1,4 @@
-try:
-    from cytoolz import curry
-except ModuleNotFoundError:
-    from toolz import curry
+from .curry import curry
 
 
 @curry
@@ -20,3 +17,10 @@ def write(f, content):
 def read(f):
     with f('r') as file:
         return file.read()
+
+
+@curry
+def append(f, content):
+    file = f('a')
+    with file:
+        file.write(content)

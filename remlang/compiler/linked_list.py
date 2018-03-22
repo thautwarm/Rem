@@ -2,6 +2,8 @@ from typing import Optional
 
 
 class Node:
+    __slots__ = ['next', 'content']
+
     def __init__(self, content=None):
         self.next = None
         self.content = content
@@ -14,6 +16,8 @@ class Node:
 
 
 class LinkedList:
+    __slots__ = ['head', 'end']
+
     def __init__(self, head_end=None):
         if head_end:
             self.head, self.end = head_end

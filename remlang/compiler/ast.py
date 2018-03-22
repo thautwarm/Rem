@@ -2,17 +2,17 @@ import itertools
 from Ruikowa.ObjectRegex.ASTDef import Ast
 from Ruikowa.ErrorHandler import ErrorHandler
 from Ruikowa.ObjectRegex.MetaInfo import MetaInfo
-from typing import List, Union
 
-from .reference_collections import ReferenceDict
+from .reference_collections import ReferenceDict, ParameterProxy
 from .order_dual_opt import order_dual_opt, BinExp, bin_op_fns
 from .rem_parser import file, token_table, UNameEnum, Tokenizer
 from .utils import flatten
 from .module import default_env, make_new_module, md5, ModuleAgent
-from .pattern_matching import pattern_match, unmatched
+from .pattern_matching import pattern_match_varargs, pattern_matching, unmatched, import_ast_for_expr
 from .control_flow import BreakUntil, Macro
 from .err import Trace
 from .tk import keywords_map
+from .msg import StatusConstructor
 
 token_func = lambda _: Tokenizer.from_raw_strings(_, token_table, ({"space", "comments"}, {}), cast_map=keywords_map)
 rem_parser = ErrorHandler(file.match, token_func)
@@ -86,9 +86,6 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
             #   ::= ['`let`'] symbol ['!' trailer+] '=' expr;
             to_new_ctx = False
 
-            symbol: 'Tokenizer'
-            trailers: 'List[Ast]'
-            expr: 'Ast'
             if sexpr[0].string is UNameEnum.keyword_let:
                 # bind a new var in current environment(closure).
                 to_new_ctx = True
@@ -107,16 +104,11 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
 
             # let symbol 'attr = ... | let symbol ![item] = ...
             ref = ctx.get_nonlocal(symbol.string)
-
-            fst_n: 'List[Ast]'
-            last: 'Union[Tokenizer, Ast]'
             *fst_n, [last] = trailers
-
             # `trailers` is a list of trailer.
             # RuikoEBNF:
             # trailer Throw ['[' ']' '.']
             #   ::= '[' exprCons ']' | '\'' symbol;
-            each: 'Union[Ast, Tokenizer]'
 
             for each, in fst_n:
                 if each.name is UNameEnum.symbol:  # symbol
@@ -147,24 +139,22 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
             # TODO with result
             raise BreakUntil(symbol.string)
 
-        elif s_name is UNameEnum.importExpr:
+        elif s_name is UNameEnum.importStmt:
             # RuikoEBNF:
             # importExpr
             #   ::= singleImportExpr | fromImportExpr | remImport;
-            branch: 'Ast'
             [branch] = sexpr
 
             if branch.name is not UNameEnum.remImport:
                 exec(' '
-                     .join(
-                    map(lambda _: _.string,
-                        flatten(
-                            branch)))
+                     .join
+                     (map(lambda _: _.string,
+                          flatten(
+                              branch)))
                      .strip(),
                      ctx.local)
                 return
             import os
-            string: 'Tokenizer'
             if len(branch) is 2:
                 string, symbol = branch
                 path = string.string
@@ -174,6 +164,7 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
                 path = string.string
                 name = os.path.split(
                     os.path.splitext(path)[0])[1]
+                name = eval(name)
 
             path = eval(path)
             src_code, md5_v = md5(path)
@@ -214,7 +205,7 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
     if expr[-1].name is UNameEnum.where:  # where
         head, *then_trailers, where = expr
         stmts = where[0]
-        res = ast_for_statements(stmts, ctx)
+        ast_for_statements(stmts, ctx)
 
     else:
         head, *then_trailers = expr
@@ -267,7 +258,7 @@ def ast_for_case_expr(case_expr: 'Ast', ctx: 'ReferenceDict'):
 def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
     """
     asExp  Throw ['=>', T, '`as`', '`when`']
-        ::= ['`as`' argMany]
+        ::= ['`as`' patMany]
             [
               [T] '`when`' [T] expr
             ]
@@ -282,7 +273,7 @@ def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
 
     for each in as_expr:
 
-        if each.name is UNameEnum.argMany:
+        if each.name is UNameEnum.patMany:
             many = each
         elif each.name is UNameEnum.expr:
             when = each
@@ -291,7 +282,7 @@ def ast_for_as_expr(as_expr: 'Ast', ctx: 'ReferenceDict', test_exp: 'BinExp'):
 
     try:
         new_ctx = ctx.branch()
-        if many and not pattern_match(many, test_exp, new_ctx):
+        if many and not pattern_match_varargs(many, test_exp, new_ctx):
             return unmatched
         if when and not ast_for_expr(when, new_ctx):
             return unmatched
@@ -586,13 +577,17 @@ def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
     if n is 1:
         lambdef, = lambdef
         if lambdef.name is UNameEnum.singleArgs:  # singleArgs
-            return Fn(list(each.string for each in lambdef), {}, (ctx, ()))
+            return Fn(list(each.string for each in lambdef), {}, (), ctx)
         else:
-            return Fn((), {}, (ctx, lambdef))
+            return Fn((), {}, lambdef, ctx)
 
     elif n is 2:
         args, stmts = lambdef
-        return Fn(list(each.string for each in args), {}, (ctx, stmts))
+        if args.name is UNameEnum.noZipPatMany:
+            args = tuple(_ for [_] in args)
+            ctx = ReferenceDict(ParameterProxy(ctx.local), ctx.parent, ctx.module_manager)
+            return PatternMatchingFn(args, stmts, ctx)
+        return Fn(list(each.string for each in args), {}, stmts, ctx)
     else:
         return lambda: None
 
@@ -607,33 +602,32 @@ def rem_eval(ast: 'Ast'):
 
 
 class Fn:
-    __slots__ = ['uneval_args', 'eval_args', 'body']
+    __slots__ = ['uneval_args', 'eval_args', 'stmts', 'ctx']
 
-    def __init__(self, uneval, eval, body):
+    def __init__(self, uneval, eval_args, stmts, ctx):
         self.uneval_args = uneval
-        self.eval_args = eval
-        self.body = body
+        self.eval_args = eval_args
+        self.ctx = ctx
+        self.stmts = stmts
 
     def __call__(self, arg=()):
 
         if not self.uneval_args and not arg:
-            ctx, stmts = self.body
-            new_ctx: 'ReferenceDict' = ctx.branch()
+            new_ctx: 'ReferenceDict' = self.ctx.branch()
             new_ctx.update(self.eval_args)
 
-            return ast_for_statements(stmts, new_ctx)
+            return ast_for_statements(self.stmts, new_ctx)
 
         eval_args = self.eval_args.copy()
         eval_args[self.uneval_args[0]] = arg
         uneval_args = self.uneval_args[1:]
 
         if not uneval_args:
-            ctx, stmts = self.body
-            new_ctx: 'ReferenceDict' = ctx.branch()
+            new_ctx: 'ReferenceDict' = self.ctx.branch()
             new_ctx.update(eval_args)
-            return ast_for_statements(stmts, new_ctx)
+            return ast_for_statements(self.stmts, new_ctx)
 
-        return Fn(uneval_args, eval_args, self.body)
+        return Fn(uneval_args, eval_args, self.stmts, self.ctx)
 
     @staticmethod
     def apply_many(self, *args):
@@ -641,8 +635,33 @@ class Fn:
         eval_args = eval_args.update(dict(zip(self.uneval_args, *args)))
         uneval_args = self.uneval_args[len(args):]
         if not uneval_args:
-            ctx, stmts = self.body
-            new_ctx = ctx.branch()
+            new_ctx = self.ctx.branch()
             new_ctx.update(eval_args)
-            return ast_for_statements(stmts, new_ctx)
-        return Fn(uneval_args, eval_args, self.body)
+            return ast_for_statements(self.stmts, new_ctx)
+        return Fn(uneval_args, eval_args, self.stmts, self.ctx)
+
+
+class PatternMatchingFn:
+    __slots__ = ['uneval_pats', 'stmts', 'ctx']
+
+    def __init__(self, uneval, stmts, ctx):
+        self.uneval_pats = uneval
+        self.ctx = ctx
+        self.stmts = stmts
+
+    def __call__(self, arg):
+
+        new_ctx = self.ctx.copy()
+        if not pattern_matching(self.uneval_pats[0], arg, new_ctx):
+            return StatusConstructor('err')
+
+        if len(self.uneval_pats) is 1:
+            new_ctx = new_ctx.branch_with(new_ctx.local.catch)
+            return ast_for_statements(self.stmts, new_ctx)
+
+        uneval_pats = self.uneval_pats[1:]
+
+        return PatternMatchingFn(uneval_pats, self.stmts, new_ctx)
+
+
+import_ast_for_expr()

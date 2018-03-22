@@ -1,23 +1,8 @@
-try:
-    from cytoolz import curry
-except ModuleNotFoundError:
-    from toolz import curry
-
-from ..compiler.control_flow import BreakUntil
+from .curry import curry
 from collections import Iterable
+from ..compiler.msg import StatusConstructor
 
-
-class Status:
-    __slots__ = ['name']
-
-    def __init__(self, name):
-        self.name = name
-
-    def __str__(self):
-        return 'Status[{}]'.format(self.name)
-
-
-if_false_status = Status('if_false_status')
+if_false_status = StatusConstructor('if_false_status')
 
 
 # if - else

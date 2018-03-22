@@ -3,16 +3,13 @@ from Ruikowa.ObjectRegex.Tokenizer import Tokenizer
 from Ruikowa.ObjectRegex.Tokenizer import unique_literal_cache_pool
 from typing import List
 
-try:
-    from cytoolz import curry
-except ModuleNotFoundError:
-    from toolz import curry
+from ..standard.curry import curry
 
 
 @curry
 def map_token(mapping: dict, tk: Tokenizer):
     name, string = mapping[tk.name, tk.string]
-    return Tokenizer(tk.name, tk.string, tk.lineno, tk.colno)
+    return Tokenizer(name, string, tk.lineno, tk.colno)
 
 
 chinese_keywords = {

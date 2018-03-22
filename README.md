@@ -27,6 +27,25 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
 
     In the future this feature would be applied on arguments for multiple dispatch.  
 
+    **Add New Functionality**
+    
+    - Dictionary Pattern Matching
+    
+    ```
+    case %{a: b}
+        as {a : &b+1} => 1
+        as {a : &b }  => 2
+    end 
+    ```
+
+    - Function Parameter Destruction
+    ```
+    >> {|(1, 2, c)| c*2} (1, 2, 3)
+    => 9
+    ```
+    [![Intro Picture](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)
+
+
 - [**Inverted Syntax**](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#inverted-syntax) (see the priority table in the linked page)  
     ```
     file . open . write some_text
