@@ -27,6 +27,14 @@ _input = input
 
 def repl():
     args = cmd_parser.parse_args()
+
+    # preload sys
+    ast_for_file(main['__compiler__']
+                 .from_source_code('<preload>',
+                                   "import sys;sys'path'append \"./\";",
+                                   meta=MetaInfo(fileName='<preload>'),
+                                   partial=False), main)
+
     testing = args.test
     if args.file:
         file_src = iter(grace_open(args.file).read().splitlines())

@@ -67,6 +67,7 @@ default = {
     'append': append,
 
     'Object': Object,
+    "index": curry(lambda x, i: x[i]),
 
     'len': len,
     'is_inst_of': curry(isinstance),
