@@ -7,6 +7,9 @@ class RemStatus:
     def __str__(self):
         return 'Status[{}]'.format(self.name)
 
+    def __repr__(self):
+        return self.__str__()
+
 
 class StatusConstructor:
     __atom_set__ = {}
@@ -22,5 +25,3 @@ class StatusConstructor:
             status = cls.__atom_set__[name] = RemStatus(name)
             return status
         return status
-
-

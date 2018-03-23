@@ -157,16 +157,14 @@ def ast_for_statement(statement: Ast, ctx: ReferenceDict):
             import os
             if len(branch) is 2:
                 string, symbol = branch
-                path = string.string
+                path = eval(string.string)
                 name = symbol.string
             else:
                 [string] = branch
-                path = string.string
+                path = eval(string.string)
                 name = os.path.split(
                     os.path.splitext(path)[0])[1]
-                name = eval(name)
 
-            path = eval(path)
             src_code, md5_v = md5(path)
             manager = ctx.module_manager
             managed_modules = manager['@modules']
@@ -212,12 +210,23 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
 
     res = ast_for_test_expr(head, ctx)
 
+    if len(then_trailers) is 1:
+        [each] = then_trailers
+        arg = ast_for_expr(each[0], ctx)
+        return arg(res) if each.name is UNameEnum.thenTrailer else res(arg)
+
+    stack = []
     for each in then_trailers:
         arg = ast_for_test_expr(each[0], ctx)
-        res = arg(res) if each.name is UNameEnum.thenTrailer else res(arg)
-
-    if res.__class__ is Macro:
-        return ast_for_expr(res.expr, ctx)
+        if each.name is UNameEnum.thenTrailer:
+            if stack:
+                res = res(*stack)
+                stack.clear()
+            res = arg(res)
+            continue
+        stack.append(arg)
+    if stack:
+        res = res(*stack)
 
     return res
 
@@ -374,16 +383,25 @@ def ast_for_inv_exp(inv: 'Ast', ctx: 'ReferenceDict'):
     atom_expr, *inv_trailers = inv
     res = ast_for_atom_expr(atom_expr, ctx)
 
+    if len(inv_trailers) is 1:
+        [each] = inv_trailers
+        if each.name is UNameEnum.atomExpr:
+            return res(ast_for_atom_expr(each, ctx))
+        return ast_for_atom_expr(each[0], ctx)(res)
+
+    stack = []
     for each in inv_trailers:
         if each.name is UNameEnum.atomExpr:
-            arg = ast_for_atom_expr(each, ctx)
-            res = res(arg)
+            stack.append(ast_for_atom_expr(each, ctx))
             continue
-        # invTrailer
-        # RuikoEBNF:
-        # invTrailer Throw ['.'] ::= '.' atomExpr;
-        arg = ast_for_atom_expr(each[0], ctx)
-        res = arg(res)
+        if stack:
+            res = res(*stack)
+            stack.clear()
+
+        res = (ast_for_atom_expr(each[0], ctx))(res)
+
+    if stack:
+        res = res(*stack)
 
     return res
 
@@ -577,9 +595,9 @@ def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
     if n is 1:
         lambdef, = lambdef
         if lambdef.name is UNameEnum.singleArgs:  # singleArgs
-            return Fn(list(each.string for each in lambdef), {}, (), ctx)
+            return Fn(list(each.string for each in lambdef), (), (), ctx)
         else:
-            return Fn((), {}, lambdef, ctx)
+            return Fn((), (), lambdef, ctx)
 
     elif n is 2:
         args, stmts = lambdef
@@ -587,7 +605,7 @@ def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
             args = tuple(_ for [_] in args)
             ctx = ReferenceDict(ParameterProxy(ctx.local), ctx.parent, ctx.module_manager)
             return PatternMatchingFn(args, stmts, ctx)
-        return Fn(list(each.string for each in args), {}, stmts, ctx)
+        return Fn(list(each.string for each in args), (), stmts, ctx)
     else:
         return lambda: None
 
@@ -610,35 +628,33 @@ class Fn:
         self.ctx = ctx
         self.stmts = stmts
 
-    def __call__(self, arg=()):
+    def __call__(self, *args):
 
-        if not self.uneval_args and not arg:
+        if not args:
+            if self.uneval_args:
+                return StatusConstructor('err')
+
             new_ctx: 'ReferenceDict' = self.ctx.branch()
             new_ctx.update(self.eval_args)
-
             return ast_for_statements(self.stmts, new_ctx)
 
-        eval_args = self.eval_args.copy()
-        eval_args[self.uneval_args[0]] = arg
-        uneval_args = self.uneval_args[1:]
+        nargs = len(args)
+        n_uneval = len(self.uneval_args)
 
-        if not uneval_args:
+        if nargs >= n_uneval:
+            args_iter = iter(args)
+            eval_args = self.eval_args + tuple(zip(self.uneval_args, args))
             new_ctx: 'ReferenceDict' = self.ctx.branch()
-            new_ctx.update(eval_args)
-            return ast_for_statements(self.stmts, new_ctx)
 
-        return Fn(uneval_args, eval_args, self.stmts, self.ctx)
-
-    @staticmethod
-    def apply_many(self, *args):
-        eval_args = self.eval_args.copy()
-        eval_args = eval_args.update(dict(zip(self.uneval_args, *args)))
-        uneval_args = self.uneval_args[len(args):]
-        if not uneval_args:
-            new_ctx = self.ctx.branch()
             new_ctx.update(eval_args)
-            return ast_for_statements(self.stmts, new_ctx)
-        return Fn(uneval_args, eval_args, self.stmts, self.ctx)
+
+            if nargs is n_uneval:
+                return ast_for_statements(self.stmts, new_ctx)
+            return ast_for_statements(self.stmts, new_ctx)(*args_iter)
+
+        uneval_args_iter = iter(self.uneval_args)
+        eval_args = self.eval_args + tuple((k, v) for v, k in zip(args, uneval_args_iter))
+        return Fn(tuple(uneval_args_iter), eval_args, self.stmts, self.ctx)
 
 
 class PatternMatchingFn:
@@ -649,19 +665,26 @@ class PatternMatchingFn:
         self.ctx = ctx
         self.stmts = stmts
 
-    def __call__(self, arg):
+    def __call__(self, *args):
+        nargs = len(args)
+        n_uneval = len(self.uneval_pats)
+
+        if nargs >= n_uneval:
+            new_ctx = self.ctx.branch_with(self.ctx.local.catch)
+            args_iter = iter(args)
+            if not all(pattern_matching(k, v, new_ctx) for k, v in zip(self.uneval_pats, args_iter)):
+                return StatusConstructor("err")
+
+            if nargs is n_uneval:
+                return ast_for_statements(self.stmts, new_ctx)
+            return ast_for_statements(self.stmts, new_ctx)(*args_iter)
 
         new_ctx = self.ctx.copy()
-        if not pattern_matching(self.uneval_pats[0], arg, new_ctx):
-            return StatusConstructor('err')
+        uneval_args_iter = iter(self.uneval_pats)
+        if not all(pattern_matching(k, v, new_ctx) for v, k in zip(args, uneval_args_iter)):
+            return StatusConstructor("err")
 
-        if len(self.uneval_pats) is 1:
-            new_ctx = new_ctx.branch_with(new_ctx.local.catch)
-            return ast_for_statements(self.stmts, new_ctx)
-
-        uneval_pats = self.uneval_pats[1:]
-
-        return PatternMatchingFn(uneval_pats, self.stmts, new_ctx)
+        return PatternMatchingFn(tuple(uneval_args_iter), self.stmts, new_ctx)
 
 
 import_ast_for_expr()

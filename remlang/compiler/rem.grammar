@@ -32,7 +32,7 @@ importAs
         ::= symbol ['as' symbol];
 
 fromImportStmt
-        ::= 'from' symbol ('.' symbol)* 'import'  (importAs+ | '(' [T] importAs ([T] ',' [T] importAs)* ')' );
+        ::= 'from' symbol ('.' symbol)* 'import'  ('*' | importAs+ | '(' [T] importAs ([T] ',' [T] importAs)* ')' );
 
 importStmt
         ::= singleImportStmt | fromImportStmt | remImport;
@@ -139,8 +139,8 @@ where throw ['where', T, 'end']   ::= 'where' [T] [statements [T]] 'end';
 expr  throw [T]
         ::= '`' expr | testExpr ([T] thenTrailer | [T] applicationTrailer)* [[T] where];
 
-thenTrailer throw ['then']
-        ::= 'then' testExpr;
+thenTrailer throw ['then' T]
+        ::= 'then' [T] testExpr;
 
 applicationTrailer throw ['$']
         ::= '$' testExpr;

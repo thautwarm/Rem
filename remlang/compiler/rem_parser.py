@@ -15,7 +15,7 @@ token_table = ((unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('from', 'as'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('.'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('import'))),
-               (unique_literal_cache_pool["auto_const"], char_matcher((',', ')', '('))),
+               (unique_literal_cache_pool["auto_const"], char_matcher((',', '*', ')', '('))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('True', 'None', 'False'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('...'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('_'))),
@@ -139,7 +139,7 @@ T = AstParser([SeqParser([Ref('newline')], at_least=1,at_most=Undef)],
 importAs = AstParser([Ref('symbol'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
                      name="importAs",
                      to_ignore=({}, {}))
-fromImportStmt = AstParser(['from', Ref('symbol'), SeqParser(['.', Ref('symbol')], at_least=0,at_most=Undef), 'import', SeqParser([SeqParser([Ref('importAs')], at_least=1,at_most=Undef)], ['(', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('importAs'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('importAs')], at_least=0,at_most=Undef), ')'], at_least=1,at_most=1)],
+fromImportStmt = AstParser(['from', Ref('symbol'), SeqParser(['.', Ref('symbol')], at_least=0,at_most=Undef), 'import', SeqParser(['*'], [SeqParser([Ref('importAs')], at_least=1,at_most=Undef)], ['(', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('importAs'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('importAs')], at_least=0,at_most=Undef), ')'], at_least=1,at_most=1)],
                            name="fromImportStmt",
                            to_ignore=({}, {}))
 importStmt = AstParser([Ref('singleImportStmt')],
@@ -253,9 +253,9 @@ expr = AstParser(['`', Ref('expr')],
                  [Ref('testExpr'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('thenTrailer')], [SeqParser([Ref('T')], at_least=0,at_most=1), Ref('applicationTrailer')], at_least=0,at_most=Undef), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('where')], at_least=0,at_most=1)],
                  name="expr",
                  to_ignore=({"T"}, {}))
-thenTrailer = AstParser(['then', Ref('testExpr')],
+thenTrailer = AstParser(['then', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('testExpr')],
                         name="thenTrailer",
-                        to_ignore=({}, {'then'}))
+                        to_ignore=({"T"}, {'then'}))
 applicationTrailer = AstParser(['$', Ref('testExpr')],
                                name="applicationTrailer",
                                to_ignore=({}, {'$'}))

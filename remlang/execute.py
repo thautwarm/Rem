@@ -46,6 +46,7 @@ def run():
     if args.repl:
         repl()
     elif args.c:
+        execute("import sys; sys'argv'append(\"./\");", main, "<preload>")
         execute(args.c, main, '<eval-input>')
     elif args.file:
         with open(args.file[0], 'r') as f:
