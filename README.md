@@ -10,7 +10,7 @@ Just use **PyPI**. Recommend to install `cytoolz` before installing to speed up 
 [![Overview](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview++.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview++.png)
 
 
-## Some Support Features
+## Some Supported Features
 
 See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md).  
 
