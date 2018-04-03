@@ -1,3 +1,5 @@
+from collections import Iterable
+
 from .reference_collections import ReferenceIter
 from .rem_parser import UNameEnum, Tokenizer
 from Ruikowa.ObjectRegex.ASTDef import Ast
@@ -23,7 +25,11 @@ def pattern_matching(left_e: Union[Ast, Tokenizer], right_e, ctx):
             [*ref, symbol] = left_e
             name = symbol.string
             if ref:
-                return ctx.get_nonlocal(name) == right_e
+                if not isinstance(right_e, Iterable):
+                    return ctx.get_nonlocal(name) == right_e
+                if right_e.__class__ is str:
+                    return right_e == ctx.get_nonlocal(name)
+                return all(zip(ctx.get_nonlocal(name), right_e))
             else:
                 ctx.set_local(name, right_e)
                 return True

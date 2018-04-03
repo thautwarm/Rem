@@ -122,7 +122,7 @@ factor  ::= ['not' | '+' | '-'] invExp [suffix];
 binExp ::= factor ((operator | 'or' | 'and' | 'in' | 'is') factor)*;
 
 caseExp throw ['case', 'end', T]
-        ::= 'case' expr [T] asExp* 'end';
+        ::= 'case' [T] expr [T] asExp* 'end';
 
 asExp  throw ['=>', T, 'as', 'when']
         ::= ['as' patMany]

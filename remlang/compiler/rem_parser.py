@@ -235,7 +235,7 @@ factor = AstParser([SeqParser(['not'], ['+'], ['-'], at_least=0,at_most=1), Ref(
 binExp = AstParser([Ref('factor'), SeqParser([SeqParser([Ref('operator')], ['or'], ['and'], ['in'], ['is'], at_least=1,at_most=1), Ref('factor')], at_least=0,at_most=Undef)],
                    name="binExp",
                    to_ignore=({}, {}))
-caseExp = AstParser(['case', Ref('expr'), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('asExp')], at_least=0,at_most=Undef), 'end'],
+caseExp = AstParser(['case', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('expr'), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('asExp')], at_least=0,at_most=Undef), 'end'],
                     name="caseExp",
                     to_ignore=({"T"}, {'case', 'end'}))
 asExp = AstParser([SeqParser(['as', Ref('patMany')], at_least=0,at_most=1), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), 'when', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('expr')], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser(['=>', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements')], at_least=0,at_most=1)], at_least=0,at_most=1)],
