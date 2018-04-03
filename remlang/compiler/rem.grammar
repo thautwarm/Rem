@@ -32,7 +32,7 @@ importAs
         ::= symbol ['as' symbol];
 
 fromImportStmt
-        ::= 'from' symbol ('.' symbol)* 'import'  ('*' | importAs+ | '(' [T] importAs ([T] ',' [T] importAs)* ')' );
+        ::= 'from'  ['...' | '.'{1, 2} ] symbol ('.' symbol)* 'import'  ('*' | importAs+ | '(' [T] importAs ([T] ',' [T] importAs)* ')' );
 
 importStmt
         ::= singleImportStmt | fromImportStmt | remImport;
