@@ -195,7 +195,7 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
         ::=  testExpr (thenTrailer | applicationTrailer)*
             [where];
     """
-    # assert expr.name == 'expr'
+    assert expr.name is UNameEnum.expr
 
     if expr[0].__class__ is Tokenizer:
         return Macro(expr[1])
@@ -210,9 +210,17 @@ def ast_for_expr(expr: 'Ast', ctx: ReferenceDict):
 
     res = ast_for_test_expr(head, ctx)
 
+    # """
+    # thenTrailer throw ['then' T]
+    #     ::= 'then' [T] testExpr;
+    #
+    # applicationTrailer throw ['$']
+    #     ::= '$' testExpr;
+    # """
+
     if len(then_trailers) is 1:
         [each] = then_trailers
-        arg = ast_for_expr(each[0], ctx)
+        arg = ast_for_test_expr(each[0], ctx)
         return arg(res) if each.name is UNameEnum.thenTrailer else res(arg)
 
     stack = []
@@ -235,6 +243,7 @@ def ast_for_test_expr(test: Ast, ctx: ReferenceDict):
     """
     testExpr ::= caseExp | binExp;
     """
+    assert test.name is UNameEnum.testExpr
     sexpr = test[0]
     if sexpr.name is UNameEnum.caseExp:
         res = ast_for_case_expr(sexpr, ctx)
@@ -311,6 +320,7 @@ def ast_for_bin_expr(bin_expr: 'Ast', ctx: 'ReferenceDict'):
     """
     binExp ::= factor ( (operator | 'or' | 'and' | 'in' | 'is') factor)*;
     """
+    assert bin_expr.name is UNameEnum.binExp
     if len(bin_expr) is not 1:
         bin_expr = [each.string if each.__class__ is Tokenizer else each for each in bin_expr]
         bin_expr = order_dual_opt(bin_expr)
@@ -341,17 +351,18 @@ def ast_for_factor(factor: 'Ast', ctx: 'ReferenceDict'):
     """
     factor ::= [unaryOp] invExp [suffix];
     """
-    # assert factor.name == 'factor'
+    assert factor.name is UNameEnum.factor
     unary_op: 'Tokenizer' = None
     suffix: 'Tokenizer' = None
     n = len(factor)
     if n is 3:
+        unary_op, inv, suffix = factor
+
+    elif n is 2:
         if factor[-1].name is UNameEnum.suffix:
-            unary_op, inv, suffix = factor
+            inv, suffix = factor
         else:
             unary_op, inv = factor
-    elif factor[-1].name is UNameEnum.suffix:
-        inv, suffix = factor
     else:
         inv, = factor
 

@@ -25,7 +25,7 @@ def rem_if(cond_fn, if_true_fn):
 def rem_else(status):
     if status is if_false_status:
         return lambda else_do: else_do()
-    return status
+    return lambda _: status
 
 
 # raise syntax

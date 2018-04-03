@@ -1,0 +1,34 @@
+import linq
+import numpy as np
+let qsort = {
+    |seq|
+    case seq
+      as []            => ()
+      as head, ...tail =>
+         let tsource = linq'Flow tail. {
+         |it|
+		(it'GroupBy group_fn)' Unboxed . call
+	 }
+	 where
+	    let group_fn = {
+    	    	|e|
+    	   	if {e > head} {1}
+       	  	.else {
+    	  	if {e < head} {-1}
+       	  	.else {0}
+		}
+	 }
+	 end
+         case tsource
+	       as {1 :  ge,
+	           -1:  le,
+	           0 :  eqs}
+	       =>
+		qsort le ++ (head, ...eqs) ++ qsort ge
+	 end
+    end
+}
+np'random'random_integers 0 100 20
+	 . qsort 
+	 . tuple 
+	 . print

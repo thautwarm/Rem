@@ -40,7 +40,7 @@ def pattern_matching(left_e: Union[Ast, Tokenizer], right_e, ctx):
         elif left_e.name is UNameEnum.tuplePat:
             if not left_e:
                 try:
-                    next(right_e)
+                    next(iter(right_e))
                 except StopIteration:
                     return True
                 else:

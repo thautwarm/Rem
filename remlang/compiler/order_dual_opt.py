@@ -7,6 +7,8 @@ try:
 except ModuleNotFoundError:
     from toolz import curry
 
+import itertools
+
 BinExp = namedtuple('BinExp', ['left', 'mid', 'right'])
 
 argsort = lambda seq: sorted(range(len(seq)), key=seq.__getitem__)
@@ -56,7 +58,7 @@ bin_op_fns = {
     '*': curry(operator.mul),
     '/': curry(operator.truediv),
     '//': curry(operator.floordiv),
-    '++': curry(operator.concat),
+    '++': curry(lambda x, y: itertools.chain(x, y)),
     '--': curry(lambda x, y: [_ for _ in x if _ not in y]),
 
     '&': curry(operator.and_),
