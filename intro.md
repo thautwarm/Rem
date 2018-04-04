@@ -94,7 +94,7 @@ So the following codes would cause runtime error.
 >> let f = {_1 + _2} 1 
 ```
 
-## Applicative
+## $ operator
 
 ```
 >> let fn = {|x| x**2}
@@ -157,7 +157,7 @@ Here is the table of priorities in Rem:
 | syntax           | priority  | sample              |
 | -------          | ---       | ---                 | 
 | then             | 1         | `a then func`       |
-| `$`(applicative) | 1         | `f $ 1 2`           | 
+| `$`              | 1         | `f $ 1 2`           | 
 | case             | 2         | `case ... end`      |
 | binary expr      | 2         | `1 * 2`             |
 | unary expr       | 3         | `a?`, `a??`, `not a`|
@@ -173,7 +173,7 @@ Here is the table of priorities in Rem:
 >> "left" . concat "right"
 left
 => "leftright"
->> 1 then add 2
+>> "right" then add "left"
 right
 => "rightleft"
 ```

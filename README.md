@@ -24,10 +24,6 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
         => statements
     end
     ```
-
-    In the future this feature would be applied on arguments for multiple dispatch.  
-
-    **Add New Functionality**
     
     - Dictionary Pattern Matching
     
@@ -41,8 +37,9 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
     - Function Parameter Destruction
     ```
     >> {|(1, 2, c)| c*2} (1, 2, 3)
-    => 9
+    => 6
     ```
+      
     [![Intro Picture](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)
 
 
@@ -53,17 +50,33 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
     
     `.` has a high priority while `then` has a lower one.  
 
+[![Inverted](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png)  
+
+[![$](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/$.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/$.png)
+
+
 
 - [Into Statement](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#into-statement)(just like `goto`)  
 
-- [Currying Function](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#functionlambda)  
+[![Into](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/into.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/into.png)
+
+
+- [Currying Function](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#functionlambda)   
+
+[![Lambda](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/lambda.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/lambda.png) 
+
 
 - [Scope](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#scope)  
 
 - [Where Syntax and Block Expression](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#where-syntax)  
+[![Where](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/where.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)
 
 
-- [For Comprehension](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#for-comprehension)  
+- [For Comprehension and For Loop](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#for-comprehension)  
+[![For](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)
+```
+from range
+```  
 
 
 ## 关于中文编程

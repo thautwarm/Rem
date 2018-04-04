@@ -571,11 +571,12 @@ def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
         lambdef = ast_for_lambdef(lambdef, new_ctx)
 
         if is_yield:
-            return (_cps(lambdef, each) for each in cartesian_prod_collections)
+            return (lambdef(*each) for each in cartesian_prod_collections)
 
         e = None
+
         for each in cartesian_prod_collections:
-            e = _cps(lambdef, each)
+            e = lambdef(*each)
 
         return e
 
@@ -674,7 +675,7 @@ class Fn:
 
         if nargs >= n_uneval:
             args_iter = iter(args)
-            eval_args = self.eval_args + tuple(zip(self.uneval_args, args))
+            eval_args = self.eval_args + tuple(zip(self.uneval_args, args_iter))
             new_ctx: 'ReferenceDict' = self.ctx.branch()
 
             new_ctx.update(eval_args)

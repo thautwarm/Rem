@@ -1,6 +1,7 @@
 from Ruikowa.ObjectRegex.ASTDef import Ast
 from Ruikowa.color import Colored
 
+
 class BreakUntil(Exception):
     __slots__ = ['name', 'res']
 

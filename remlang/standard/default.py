@@ -4,6 +4,7 @@ from functools import reduce
 from collections import Iterable, OrderedDict, Iterator
 
 from ..compiler.utils import cast, to_chinese
+from ..compiler.msg import StatusConstructor, RemStatus
 
 from .syntax import *
 from .io import *
@@ -78,5 +79,10 @@ default = {
 
     'string': str,
     'int': int,
-    'float': float
+    'float': float,
+
+    # msg
+    'status': StatusConstructor,
+    'is_status': lambda _: isinstance(_, RemStatus)
+
 }
