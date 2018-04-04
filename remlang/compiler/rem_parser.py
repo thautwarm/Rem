@@ -74,7 +74,7 @@ class UNameEnum:
     singleImportStmt = unique_literal_cache_pool['singleImportStmt']
     remImport = unique_literal_cache_pool['remImport']
     const = unique_literal_cache_pool['const']
-    singleArgs = unique_literal_cache_pool['singleArgs']
+    simpleArgs = unique_literal_cache_pool['simpleArgs']
     patMany = unique_literal_cache_pool['patMany']
     iterMark = unique_literal_cache_pool['iterMark']
     pat = unique_literal_cache_pool['pat']
@@ -146,7 +146,7 @@ importStmt = AstParser([Ref('singleImportStmt')],
                        [Ref('remImport')],
                        name="importStmt",
                        to_ignore=({}, {}))
-singleImportStmt = AstParser(['import', Ref('singleArgs'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
+singleImportStmt = AstParser(['import', Ref('simpleArgs'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
                              name="singleImportStmt",
                              to_ignore=({}, {}))
 remImport = AstParser(['import', Ref('string'), SeqParser(['as', Ref('symbol')], at_least=0,at_most=1)],
@@ -157,8 +157,8 @@ const = AstParser(['True'],
                   ['None'],
                   name="const",
                   to_ignore=({}, {}))
-singleArgs = AstParser([Ref('symbol'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('symbol')], at_least=0,at_most=Undef)],
-                       name="singleArgs",
+simpleArgs = AstParser([Ref('symbol'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('symbol')], at_least=0,at_most=Undef)],
+                       name="simpleArgs",
                        to_ignore=({"T"}, {','}))
 patMany = AstParser([Ref('pat'), SeqParser([SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ',', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('pat')], at_least=1,at_most=Undef), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), SeqParser([Ref('iterMark')], at_least=0,at_most=1)],
                     name="patMany",
@@ -199,8 +199,8 @@ kvPatMany = AstParser([Ref('kvPat'), SeqParser([SeqParser([SeqParser([Ref('T')],
 dictPat = AstParser(['{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('kvPatMany'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
                     name="dictPat",
                     to_ignore=({"T"}, {'{', '}'}))
-lambdef = AstParser(['{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser(['|', SeqParser([SeqParser([Ref('singleArgs')], [Ref('noZipPatMany')], at_least=1,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '|'], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
-                    ['from', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([SeqParser([Ref('singleArgs')], [Ref('noZipPatMany')], at_least=1,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'let', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'end'],
+lambdef = AstParser(['{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser(['|', SeqParser([SeqParser([Ref('simpleArgs')], [Ref('noZipPatMany')], at_least=1,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '|'], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
+                    ['from', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([SeqParser([Ref('simpleArgs')], [Ref('noZipPatMany')], at_least=1,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'let', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('statements'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), 'end'],
                     name="lambdef",
                     to_ignore=({"T"}, {'{', '}', '|', ',', 'from', 'let', 'end'}))
 atom = AstParser([Ref('refName')],

@@ -78,6 +78,21 @@ Something you need to take care is that **Functions are curried** in Rem.
 => from x, y, z let x + y + z end # another way to define a lambda
 ```
 
+A very sweet syntax sugar from `Scala` is now supported.
+```
+>> 1 . {_ + 1} 
+=> 2
+>> [1, 2, 3] . map {_ + 1} . list
+=> [2, 3, 4]
+>> {_1 + _2} 1 2
+=> 3
+```
+Take care that when you're using multiple implicit parameters, you cannot curry it.  
+
+So the following codes would cause runtime error.
+```
+>> let f = {_1 + _2} 1 
+```
 
 ## Applicative
 
@@ -212,7 +227,15 @@ You can use it for only destruction:
 => <tuple_iterator object at 0x0000017689F95FD0>
 >> t. tuple
 => (5, )
+>> case 
+        %{1: [1, 2, 3], 2: [2, 3, 4]} 
+   as 
+        {1: a, 2: b} 
+   end
+>> (a, b)
+=> ([1, 2, 3], [2, 3, 4])
 ```
+
 
 The return of `pack` destruction(`...a`) is of type tuple when length is 1, or it's of type 
 tuple_iterator.

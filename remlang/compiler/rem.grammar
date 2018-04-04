@@ -38,7 +38,7 @@ importStmt
         ::= singleImportStmt | fromImportStmt | remImport;
 
 singleImportStmt
-        ::= 'import' singleArgs ['as' symbol];
+        ::= 'import' simpleArgs ['as' symbol];
 
 remImport throw ['import', 'as']
         ::= 'import' string [ 'as' symbol];
@@ -49,7 +49,7 @@ const   ::= 'True' | 'False' | 'None';
 
 
 # lambda currently does not support argument destruction.
-singleArgs throw [',' T]
+simpleArgs throw [',' T]
         ::= symbol ([T] ',' [T] symbol)*;
 
 # for pattern matching
@@ -85,13 +85,13 @@ dictPat throw ['{' '}' T]
 
 lambdef throw ['{', '}', '|', ',', 'from', 'let', 'end', T]
         ::= '{' [T]
-                ['|' [(singleArgs|noZipPatMany) [T]] '|']
+                ['|' [(simpleArgs|noZipPatMany) [T]] '|']
                 [T]
                 [statements [T]]
             '}'
             |
             'from' [T]
-                [(singleArgs|noZipPatMany) [T]]
+                [(simpleArgs|noZipPatMany) [T]]
             'let' [T]
                 [statements [T]]
             'end'

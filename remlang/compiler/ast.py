@@ -605,10 +605,10 @@ def ast_for_lambdef(lambdef: 'Ast', ctx: 'ReferenceDict'):
     n = len(lambdef)
     if n is 1:
         lambdef, = lambdef
-        if lambdef.name is UNameEnum.singleArgs:  # singleArgs
+        if lambdef.name is UNameEnum.simpleArgs:  # singleArgs
             return Fn(list(each.string for each in lambdef), (), (), ctx)
         else:
-            return Fn((), (), lambdef, ctx)
+            return Thunk(lambdef, ctx)
 
     elif n is 2:
         args, stmts = lambdef
@@ -628,6 +628,26 @@ def ast_for_file(file_source_parsed: 'Ast', ctx: 'ReferenceDict'):
 
 def rem_eval(ast: 'Ast'):
     return lambda ctx: ast_for_expr(ast, ctx)
+
+
+class Thunk:
+    __slots__ = ['stmts', 'ctx', 'args']
+
+    def __init__(self, stmts, ctx):
+        self.ctx: ReferenceDict = ctx
+        self.stmts: Ast = stmts
+
+    def __call__(self, *args):
+        if not args:
+            new_ctx = self.ctx.branch()
+            return ast_for_statements(self.stmts, new_ctx)
+
+        eval_args = {'_': args[0]}
+
+        if len(args) > 1:
+            eval_args.update({f'_{i + 1}': arg for i, arg in enumerate(args)})
+
+        return ast_for_statements(self.stmts, self.ctx.branch_with(eval_args))
 
 
 class Fn:
