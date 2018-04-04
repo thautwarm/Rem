@@ -39,7 +39,6 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
     >> {|(1, 2, c)| c*2} (1, 2, 3)
     => 6
     ```
-      
     [![Intro Picture](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)
 
 
@@ -50,33 +49,31 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
     
     `.` has a high priority while `then` has a lower one.  
 
-[![Inverted](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png)  
+    [![Inverted](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png)  
 
-[![$](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/$.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/$.png)
+    [![$](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/$.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/$.png)
 
 
 
 - [Into Statement](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#into-statement)(just like `goto`)  
 
-[![Into](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/into.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/into.png)
+    [![Into](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/into.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/into.png)
 
 
 - [Currying Function](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#functionlambda)   
 
-[![Lambda](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/lambda.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/lambda.png) 
+    [![Lambda](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/lambda.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/lambda.png) 
 
 
 - [Scope](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#scope)  
 
 - [Where Syntax and Block Expression](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#where-syntax)  
-[![Where](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/where.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)
+    [![Where](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/where.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)
 
 
 - [For Comprehension and For Loop](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#for-comprehension)  
-[![For](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)
-```
-from range
-```  
+    [![For](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/for.png)
+
 
 
 ## 关于中文编程
