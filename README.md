@@ -3,9 +3,12 @@
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/LICENSE)
 
 
-# Available Rem Langauge
+# Rem Langauge
 
-Just use **PyPI**. Recommend to install `cytoolz` before installing to speed up function calls in Rem.  
+Just use **PyPI**. Recommend to install `cytoolz` before installing Rem to speed up function invocations.  
+```shell
+pip install remlang
+```  
 
 [![Overview](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview++.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview++.png)
 
@@ -16,7 +19,7 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
 
 
 - [Pattern Matching](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#pattern-matching)  
-    Currenly support `case` syntax.  
+    Currently support `case` syntax.  
     ```
     case expr 
         as destruction 
@@ -39,9 +42,6 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
     >> {|(1, 2, c)| c*2} (1, 2, 3)
     => 6
     ```
-    [![Intro Picture](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png)
-
-
 - [**Inverted Syntax**](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#inverted-syntax) (see the priority table in the linked page)  
     ```
     file . open . write some_text
@@ -78,7 +78,7 @@ See all features at [Inrtoduction](https://github.com/thautwarm/Rem/blob/ebnfpar
 
 ## 关于中文编程
 
-Rem 支持中文编程来源于它的tokenizer可以被动态操控，在任意一个Rem模块里，均有一个`__compiler__`对象。当下内置了一个无参函数`中文编程`， 便可以使用中文关键字。  
+Rem 支持中文编程, 因为它的tokenizer可以被动态操控，在任意一个Rem模块里，均有一个`__compiler__`对象， 负责处理输入语句到`ast`的转换。当下内置了一个无参函数`中文编程`， 便可以使用中文关键字。  
 
 ```
 >> call 中文编程

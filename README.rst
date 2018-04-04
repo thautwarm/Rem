@@ -1,10 +1,14 @@
 |PyPI version| |Intro| |MIT|
 
-Available Rem Langauge
-======================
+Rem Langauge
+============
 
-Just use **PyPI**. Recommend to install ``cytoolz`` before installing to
-speed up function calls in Rem.
+Just use **PyPI**. Recommend to install ``cytoolz`` before installing
+Rem to speed up function invocations.
+
+.. code:: shell
+
+    pip install remlang
 
 |Overview|
 
@@ -16,7 +20,7 @@ See all features at
 
 -  | `Pattern
      Matching <https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#pattern-matching>`__
-   | Currenly support ``case`` syntax.
+   | Currently support ``case`` syntax.
 
    ::
 
@@ -42,8 +46,6 @@ See all features at
           >> {|(1, 2, c)| c*2} (1, 2, 3)
           => 6
 
-   |Intro Picture|
-
 -  `**Inverted
    Syntax** <https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#inverted-syntax>`__
    (see the priority table in the linked page)
@@ -54,20 +56,20 @@ See all features at
 
    ``.`` has a high priority while ``then`` has a lower one.
 
-|Inverted|
+   |Inverted|
 
-|$|
+   |$|
 
 -  `Into
    Statement <https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#into-statement>`__\ (just
    like ``goto``)
 
-|Into|
+   |Into|
 
 -  `Currying
    Function <https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#functionlambda>`__
 
-|Lambda|
+   |Lambda|
 
 -  `Scope <https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#scope>`__
 
@@ -79,15 +81,12 @@ See all features at
      Loop <https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro.md#for-comprehension>`__
    | |For|
 
-   ::
-
-       from range
-
 关于中文编程
 ------------
 
-Rem
-支持中文编程来源于它的tokenizer可以被动态操控，在任意一个Rem模块里，均有一个\ ``__compiler__``\ 对象。当下内置了一个无参函数\ ``中文编程``\ ，
+Rem 支持中文编程,
+因为它的tokenizer可以被动态操控，在任意一个Rem模块里，均有一个\ ``__compiler__``\ 对象，
+负责处理输入语句到\ ``ast``\ 的转换。当下内置了一个无参函数\ ``中文编程``\ ，
 便可以使用中文关键字。
 
 ::
@@ -135,8 +134,6 @@ Rem
    :target: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/LICENSE
 .. |Overview| image:: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview++.png
    :target: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview++.png
-.. |Intro Picture| image:: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png
-   :target: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/intro_pic.png
 .. |Inverted| image:: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png
    :target: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/inverted.png
 .. |$| image:: https://github.com/thautwarm/Rem/blob/ebnfparser2.0/overview-figs/$.png
