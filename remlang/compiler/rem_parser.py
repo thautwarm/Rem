@@ -3,7 +3,8 @@ from Ruikowa.ObjectRegex.Tokenizer import unique_literal_cache_pool, regex_match
 from Ruikowa.ObjectRegex.Node import AstParser, Ref, SeqParser, LiteralValueParser as L, LiteralNameParser, Undef
 namespace = globals()
 recur_searcher = set()
-token_table = ((unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
+token_table = ((unique_literal_cache_pool["keyword"], str_matcher(('yield', 'where', 'when', 'then', 'or', 'not', 'let', 'is', 'into', 'in', 'import', 'from', 'end', 'case', 'as', 'and', 'True', 'None', 'False'))),
+               (unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
                (unique_literal_cache_pool["newline"], regex_matcher('\n+')),
                (unique_literal_cache_pool["space"], regex_matcher('\s+')),
                (unique_literal_cache_pool["symbol"], regex_matcher('[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff_]{1}[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\d_]*')),
@@ -34,7 +35,7 @@ token_table = ((unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('%'))),
                (unique_literal_cache_pool["auto_const"], str_matcher(('yield'))),
                (unique_literal_cache_pool["auto_const"], char_matcher(('@'))),
-               (unique_literal_cache_pool["auto_const"], str_matcher(('into'))))
+               (unique_literal_cache_pool["auto_const"], str_matcher(('into'))),)
 
 class UNameEnum:
 # names

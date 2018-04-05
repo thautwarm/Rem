@@ -6,7 +6,7 @@ with open('./README.rst', encoding='utf-8') as f:
 setup(
     name='remlang',
     long_description=readme,
-    version='0.4.5.1',
+    version='0.4.5.2',
     packages=['remlang', 'remlang.compiler', 'remlang.standard'],
     url='https://github.com/thautwarm/Rem',
     license='MIT',
@@ -22,7 +22,7 @@ setup(
     platforms='any',
     install_requires=[
         'toolz',
-        'EBNFParser >= 2.1'
+        'EBNFParser >= 2.1.2'
     ],
     classifiers=[
         'Programming Language :: Python :: 3.6',

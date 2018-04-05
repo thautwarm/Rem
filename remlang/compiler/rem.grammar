@@ -1,6 +1,7 @@
 ignore [space comments]
 
-keyword  as K := 'then', 'when',   'and',    'or', 'not'
+keyword cast as K 
+		:= 		 'then', 'when',   'and',    'or', 'not'
                  'in',   'not',    'case',   'as'
             	 'end',  'where',  'from',   'yield'
             	 'into', 'let',    'True',   'False'
