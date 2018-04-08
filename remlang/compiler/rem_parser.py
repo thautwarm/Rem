@@ -3,11 +3,11 @@ from Ruikowa.ObjectRegex.Tokenizer import unique_literal_cache_pool, regex_match
 from Ruikowa.ObjectRegex.Node import AstParser, Ref, SeqParser, LiteralValueParser as L, LiteralNameParser, Undef
 namespace = globals()
 recur_searcher = set()
-token_table = ((unique_literal_cache_pool["keyword"], str_matcher(('yield', 'where', 'when', 'then', 'or', 'not', 'let', 'is', 'into', 'in', 'import', 'from', 'end', 'case', 'as', 'and', 'True', 'None', 'False'))),
-               (unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
+token_table = ((unique_literal_cache_pool["auto_const"], char_matcher(('&'))),
                (unique_literal_cache_pool["newline"], regex_matcher('\n+')),
                (unique_literal_cache_pool["space"], regex_matcher('\s+')),
                (unique_literal_cache_pool["symbol"], regex_matcher('[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff_]{1}[a-zA-Z\u4e00-\u9fa5\u3040-\u309f\u30a0-\u30ff\d_]*')),
+               (unique_literal_cache_pool["keyword"], str_matcher(('yield', 'where', 'when', 'then', 'or', 'not', 'let', 'is', 'into', 'in', 'import', 'from', 'end', 'case', 'as', 'and', 'True', 'None', 'False'))),
                (unique_literal_cache_pool["string"], regex_matcher('"([^\"]+|\\.)*?"')),
                (unique_literal_cache_pool["comments"], regex_matcher('(#.*)|(((/\*)+?[\w\W]+?(\*/)+))')),
                (unique_literal_cache_pool["number"], regex_matcher('0[Xx][\da-fA-F]+|\d+(?:\.\d+|)(?:E\-{0,1}\d+|)')),
@@ -40,6 +40,10 @@ token_table = ((unique_literal_cache_pool["keyword"], str_matcher(('yield', 'whe
 class UNameEnum:
 # names
 
+    refName = unique_literal_cache_pool['refName']
+    newline = unique_literal_cache_pool['newline']
+    space = unique_literal_cache_pool['space']
+    symbol = unique_literal_cache_pool['symbol']
     keyword_then = unique_literal_cache_pool['then']
     keyword_when = unique_literal_cache_pool['when']
     keyword_and = unique_literal_cache_pool['and']
@@ -60,10 +64,6 @@ class UNameEnum:
     keyword_import = unique_literal_cache_pool['import']
     keyword_is = unique_literal_cache_pool['is']
     keyword = unique_literal_cache_pool['keyword']
-    refName = unique_literal_cache_pool['refName']
-    newline = unique_literal_cache_pool['newline']
-    space = unique_literal_cache_pool['space']
-    symbol = unique_literal_cache_pool['symbol']
     string = unique_literal_cache_pool['string']
     comments = unique_literal_cache_pool['comments']
     number = unique_literal_cache_pool['number']
@@ -121,10 +121,10 @@ class UNameEnum:
         
 cast_map = {'then': unique_literal_cache_pool['keyword'], 'when': unique_literal_cache_pool['keyword'], 'and': unique_literal_cache_pool['keyword'], 'or': unique_literal_cache_pool['keyword'], 'not': unique_literal_cache_pool['keyword'], 'in': unique_literal_cache_pool['keyword'], 'case': unique_literal_cache_pool['keyword'], 'as': unique_literal_cache_pool['keyword'], 'end': unique_literal_cache_pool['keyword'], 'where': unique_literal_cache_pool['keyword'], 'from': unique_literal_cache_pool['keyword'], 'yield': unique_literal_cache_pool['keyword'], 'into': unique_literal_cache_pool['keyword'], 'let': unique_literal_cache_pool['keyword'], 'True': unique_literal_cache_pool['keyword'], 'False': unique_literal_cache_pool['keyword'], 'None': unique_literal_cache_pool['keyword'], 'import': unique_literal_cache_pool['keyword'], 'is': unique_literal_cache_pool['keyword']}
 token_func = lambda _: Tokenizer.from_raw_strings(_, token_table, ({"space", "comments"}, {}),cast_map=cast_map)
-keyword = LiteralNameParser('keyword')
 newline = LiteralNameParser('newline')
 space = LiteralNameParser('space')
 symbol = LiteralNameParser('symbol')
+keyword = LiteralNameParser('keyword')
 string = LiteralNameParser('string')
 comments = LiteralNameParser('comments')
 number = LiteralNameParser('number')

@@ -1,4 +1,4 @@
-cd example_source_codes
+cd tests-example_source_codes
 
 remlang class.rem
 remlang for_comp.rem

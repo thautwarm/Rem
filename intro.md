@@ -173,7 +173,7 @@ Here is the table of priorities in Rem:
 >> "left" . concat "right"
 left
 => "leftright"
->> "right" then add "left"
+>> "right" then concat "left"
 right
 => "rightleft"
 ```
@@ -353,7 +353,30 @@ inst'go 1
 ```
 
 
+## Chinese Programming 
 
+附: 中英文token对照  
+| English           | 中文   |
+| -------           | ---    |
+| then              | 然后   |
+| when              | 当     |
+| and               | 并且   |
+| or                | 或者   |
+| in                | 含于   |
+| not               | 非     |
+| case              | 对于   |
+| as                | 作为   |
+| end               | 结束   |
+| where             | 其中   |
+| from              | 从     |
+| yield             | 生成   |
+| into              | 跳跃到 |
+| let               | 使/让  |
+| True              | 真     |
+| False             | 假     |
+| None              | 空     |
+| is                | 是     |
+| `.`               | 之     |
 
 
 

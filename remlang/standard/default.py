@@ -13,7 +13,7 @@ from .path import Path
 from .collections import *
 
 LICENSE_INFO = """
-Rem Language 0.4.0 alpha, March 21 2018 06:47. 
+Rem Language 0.4.6, March 21 2018 06:47. 
 Backend CPython, Author thautwarm, MIT License.
 Report at https://github.com/thautwarm/Rem/issues.
 """

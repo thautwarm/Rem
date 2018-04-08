@@ -22,9 +22,9 @@ op_priority = {  # priority
     '<=': 3,
     '==': 3,
     '!=': 3,
-    '`in`': 4,
-    '`or`': 5,
-    '`and`': 6,
+    'in': 4,
+    'or': 5,
+    'and': 6,
     '<-': 7,
     '|': 7,  # union
     '&': 8,  # joint
@@ -48,7 +48,7 @@ op_priority = {  # priority
     '||': 14,
 
     '&&': 14,
-    '`is`': 15,
+    'is': 15,
     # end[bit op]
 }
 
@@ -62,10 +62,10 @@ bin_op_fns = {
     '--': curry(lambda x, y: [_ for _ in x if _ not in y]),
 
     '&': curry(operator.and_),
-    '`and`': curry(lambda x, y: x and y),
+    'and': curry(lambda x, y: x and y),
 
     '|': curry(operator.or_),
-    '`or`': curry(lambda a, b: a or b),
+    'or': curry(lambda a, b: a or b),
 
     '%': curry(operator.mod),
     '**': curry(operator.pow),
@@ -78,9 +78,9 @@ bin_op_fns = {
     '>': curry(operator.gt),
     '>=': curry(operator.ge),
     '==': curry(operator.eq),
-    '`is`': curry(operator.is_),
+    'is': curry(operator.is_),
     '!=': curry(operator.ne),
-    '`in`': curry(lambda e, collection: e in collection),
+    'in': curry(lambda e, collection: e in collection),
 
 }
 
