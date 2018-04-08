@@ -356,8 +356,9 @@ inst'go 1
 ## Chinese Programming 
 
 附: 中英文token对照  
+
 | English           | 中文   |
-| -------           | ---    |
+| -------           | -----  |
 | then              | 然后   |
 | when              | 当     |
 | and               | 并且   |
