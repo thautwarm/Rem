@@ -9,7 +9,7 @@ Rem looks like Python, Ruby and many other dynamic languages, and it adopts some
 The **inverted syntax** in Rem is the core in some degree. As the result of unifying the manipulations on first-class functions, you can write these object-oriented-like codes in the following way:  
 
 ```
->> ["foo", "bar"] . map {|x| x ++ "tail"} 
+>> ["foo", "bar"] . map {|x| x + "tail"} 
 ``` 
 However it's not really object-oriented, it's functional!  
 
@@ -278,7 +278,7 @@ List: Just Python `list`
     4
 ]
 
->> l1 ++ [1, 2, 3] 
+>> l1 ++ [1, 2, 3] then list
 => [1, 2, 3, 4, 1, 2, 3]
 >> l1 -- [1, 2, 3]
 => [4]
