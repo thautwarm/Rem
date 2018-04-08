@@ -369,6 +369,7 @@ inst'go 1
 | end               | 结束   |
 | where             | 其中   |
 | from              | 从     |
+| import            | 导入   |
 | yield             | 生成   |
 | into              | 跳跃到 |
 | let               | 使/让  |

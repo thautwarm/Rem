@@ -543,10 +543,8 @@ def ast_for_kv_cons(expr_cons: Ast, ctx: ReferenceDict):
                 yield ast_for_expr(k, ctx), ast_for_expr(v, ctx)
 
 
-def _cps(f, xs):
-    for e in xs:
-        f = f(e)
-    return f
+def auto_kv_pairs(expr):
+    return expr.items() if isinstance(expr, dict) else expr
 
 
 def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
@@ -566,10 +564,9 @@ def ast_for_comprehension(comprehension: 'Ast', ctx: 'ReferenceDict'):
 
     try:
         cartesian_prod_collections = itertools.product(
-            *(ast_for_expr(each, new_ctx) for each in collections))
+            *(auto_kv_pairs(ast_for_expr(each, new_ctx)) for each in collections))
 
         lambdef = ast_for_lambdef(lambdef, new_ctx)
-
         if is_yield:
             return (lambdef(*each) for each in cartesian_prod_collections)
 

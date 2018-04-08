@@ -102,6 +102,7 @@ Rem 支持中文编程, 因为它的tokenizer可以被动态操控，在任意�
 | end               | 结束   |
 | where             | 其中   |
 | from              | 从     |
+| import            | 导入   |
 | yield             | 生成   |
 | into              | 跳跃到 |
 | let               | 使/让  |

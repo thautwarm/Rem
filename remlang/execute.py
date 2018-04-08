@@ -43,20 +43,42 @@ def run():
                            help='run some source codes',
                            type=str)
 
+    cmdparser.add_argument('--py_exception',
+                            default=False,
+                            const=True,
+                            nargs='?',
+                            help='show python exception?',
+                            type=bool)
+
+
+    cmdparser.add_argument('--chinese',
+                            default=False,
+                            const=True,
+                            nargs='?',
+                            help='chinese  prog',
+                            type=bool)
+
     args = cmdparser.parse_args()
+    
+    if args.chinese:
+        main['中文编程']()
+
+
     if args.repl:
         repl()
     elif args.c:
         execute("import sys; sys'path'append(\"./\");print 1", main, '<preload>')
         execute(args.c, main, '<eval-input>')
+        
+
     elif args.file:
-        with open(args.file[0], 'r') as f:
+        with open(args.file[0], 'r', encoding='utf8') as f:
             src = f.read()
         try:
             execute("import sys;sys'path'append \"./\";", main, "<preload>")
             execute(src, main, os.path.abspath(args.file[0]))
         except Exception as e:
-            logger.error(Colored.LightBlue + str(e) + Colored.Clear)
+            logger.error(Colored.LightBlue + str(e) + Colored.Clear, exc_info=args.py_exception)
 
 
     else:

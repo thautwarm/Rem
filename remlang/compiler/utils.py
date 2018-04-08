@@ -34,6 +34,7 @@ chinese_keywords = {
     '导入': 'import',
     '是': 'is',
     '之': '.',
+    '等于': '='
 }
 chinese_keywords = {k: (unique_literal_cache_pool['keyword'], unique_literal_cache_pool[v])
                     for k, v in

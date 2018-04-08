@@ -1,9 +1,17 @@
 from .curry import curry
 
+codecs = ('utf8', 'gb18030', 'latin-1')
+def try_open(filename, mode):
+	for each in codecs:
+		try:
+			return open(filename, mode, encoding=each)
+		except UnicodeDecodeError:
+			continue
+	raise UnicodeDecodeError
 
 @curry
 def open_file(file_name, mode):
-    return open(file_name, mode)
+    return try_open(file_name, mode)
 
 
 @curry

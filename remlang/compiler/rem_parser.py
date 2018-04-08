@@ -256,9 +256,9 @@ expr = AstParser(['`', Ref('expr')],
 thenTrailer = AstParser(['then', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('testExpr')],
                         name="thenTrailer",
                         to_ignore=({"T"}, {'then'}))
-applicationTrailer = AstParser(['$', Ref('testExpr')],
+applicationTrailer = AstParser(['$', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('testExpr')],
                                name="applicationTrailer",
-                               to_ignore=({}, {'$'}))
+                               to_ignore=({"T"}, {'$'}))
 statements = AstParser([Ref('statement'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), Ref('statement')], at_least=0,at_most=Undef)],
                        name="statements",
                        to_ignore=({"T"}, {}))
@@ -298,7 +298,7 @@ setCons = AstParser(['%', '{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqP
 dictCons = AstParser(['%', '{', SeqParser([Ref('T')], at_least=0,at_most=1), SeqParser([Ref('kvCons'), SeqParser([Ref('T')], at_least=0,at_most=1)], at_least=0,at_most=1), '}'],
                      name="dictCons",
                      to_ignore=({"T"}, {'%', '{', '}'}))
-compreh = AstParser(['from', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('exprMany'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), 'not'], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), 'yield', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('lambdef')],
+compreh = AstParser(['from', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('exprMany'), SeqParser([SeqParser([Ref('T')], at_least=0,at_most=1), ('keyword', 'not')], at_least=0,at_most=1), SeqParser([Ref('T')], at_least=0,at_most=1), 'yield', SeqParser([Ref('T')], at_least=0,at_most=1), Ref('lambdef')],
                     name="compreh",
                     to_ignore=({"T"}, {'from', 'yield'}))
 label = AstParser(['@', Ref('symbol')],

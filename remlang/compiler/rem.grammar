@@ -143,8 +143,8 @@ expr  throw [T]
 thenTrailer throw ['then' T]
         ::= 'then' [T] testExpr;
 
-applicationTrailer throw ['$']
-        ::= '$' testExpr;
+applicationTrailer throw [T '$']
+        ::= '$' [T] testExpr;
 
 statements throw [T]
         ::= statement ([T] statement)*;
@@ -167,7 +167,7 @@ listCons  throw ['[' ']' T] ::= '[' [T] [exprCons [T]] ']';
 tupleCons  throw ['(' ')' T] ::= '(' [T] [exprCons [T]] ')';
 setCons  throw ['%' '{' '}' T] ::=  '%' '{' [T] [exprCons [T]] '}';
 dictCons  throw ['%' '{' '}' T] ::=  '%' '{' [T] [kvCons [T]] '}';
-compreh  throw['from' 'yield' T] ::=  'from' [T] exprMany [[T] 'not'] [T] 'yield' [T] lambdef;
+compreh  throw['from' 'yield' T] ::=  'from' [T] exprMany [[T] K'not'] [T] 'yield' [T] lambdef;
 
 label throw ['@'] ::= '@' symbol;
 into throw ['into'] ::= 'into' symbol;

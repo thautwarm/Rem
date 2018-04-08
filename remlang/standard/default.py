@@ -22,6 +22,17 @@ Report at https://github.com/thautwarm/Rem/issues.
 class Object:
     pass
 
+def py_fn(f, args=None, kwargs=None):
+    """
+    Rem codes: py_fn f args kwargs
+    python intepreted as: f(*args, **kwargs)
+    """
+    if not args:
+        args = ()
+    if not kwargs:
+        kwargs = {}
+    return f(*args, **kwargs)
+
 
 default = {
     # syntax
@@ -57,6 +68,7 @@ default = {
 
     # function helper
     'call': lambda f: f(),
+    'py_fn': py_fn,
 
     # IO
     'write': write,
