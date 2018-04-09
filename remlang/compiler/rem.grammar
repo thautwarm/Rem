@@ -84,9 +84,9 @@ dictPat throw ['{' '}' T]
         ::= '{'[T] [kvPatMany [T]]'}';
 
 
-lambdef throw ['{', '}', '|', ',', 'from', 'let', 'end', T]
+lambdef throw ['{', '}', '|', ',', 'from', 'let', 'end', T, '=>']
         ::= '{' [T]
-                ['|' [(simpleArgs|noZipPatMany) [T]] '|']
+                ['|' [(simpleArgs|noZipPatMany) [T]] '|' | (simpleArgs|noZipPatMany) '=>']
                 [T]
                 [statements [T]]
             '}'

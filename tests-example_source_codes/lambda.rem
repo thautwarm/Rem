@@ -1,0 +1,13 @@
+[1, 2, 3] 
+	. map {_ + 1} 
+    . reduce {_1 + _2}
+    . {print "equals to 9?" _ == 9}
+
+
+{
+	x, y => 
+		let z = x + y
+		print z
+} 1 2
+
+

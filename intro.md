@@ -76,7 +76,33 @@ Something you need to take care is that **Functions are curried** in Rem.
 >> fn 20
 => 35
 => from x, y, z let x + y + z end # another way to define a lambda
+=> {x, y, z => x + y + z}         # another way to define a lambda
 ```
+You can make a `lambda` with the syntax you prefer:
+
+- JavaScript like:
+    
+    `{x, y => x + y}; {{"a": a}, (b, c) => a + b + c}`
+
+- Ruby like:
+    
+    `{|x, y| x + y}, {|{"a": a}; (b, c)| a + b + c }`
+
+- Natural language like 
+
+    ```
+    from 
+        x, y
+    let 
+        x + y
+    end
+
+    from 
+        {"a": a}, (b, c) 
+    let
+        a + b + c
+    end
+    ```
 
 A very sweet syntax sugar from `Scala` is now supported.
 ```

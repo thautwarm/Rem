@@ -1,13 +1,12 @@
+call 中文编程 /* repl模式有效，使用remlang命令运行时请使用 --chinese 选项 */
 
 ## Hello World
-
 print "Hello World"
 print $ "Hello" + " " + "World"
 print ("Hello" + " " + "World")
 "Hello World" . print
 "Hello World" then print
 "Hello World" then (exec $ "pr" + "int")
-
 ## FileIO
 
 "io.txt"
@@ -18,7 +17,6 @@ print ("Hello" + " " + "World")
    .open
    .read
    .print
-
 
 ## simple data manipulation
 let my_data = %{
@@ -31,8 +29,8 @@ let my_data = %{
 from
    my_data
 not yield
-   {|(k, v)|
-    print $ "my " + k + " is " + v.string
+   { k, v =>
+     print $ "my " + k + " is " + v.string
    }
 
 /* for-compreshension */
@@ -50,7 +48,6 @@ case my_data
                            [a, b . list]
 end
 then print
-
 
 /* travsersal manipulation */
 
@@ -78,9 +75,7 @@ print 圆柱表面积
 
 
 /* 调用画图 */
-/* 
-py_fn: use `help py_fn` to show help information.
-*/
+/*  py_fn: use `help py_fn` to show help information. */
 from tkinter import *
 let root = py_fn Tk
 
@@ -88,7 +83,6 @@ let w = py_fn Label [root] %{"text": "Hello, world!"}
 w'pack . call
 
 root'mainloop . call
-
 
 
 /* Quote Expression */
