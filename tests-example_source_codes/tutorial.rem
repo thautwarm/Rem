@@ -56,10 +56,10 @@ then print
    .reduce {_1 + _2} 
    .print
 
-
 /* where */
 
 从 math 导入 pi
+让 打印 等于 print
 
 对于 (2, 3) 
    作为 半径, 高度 
@@ -71,7 +71,7 @@ then print
       使 底面积 = pi * 半径 ** 2
    结束
 
-print 圆柱表面积
+打印 圆柱表面积
 
 
 /* 调用画图 */
