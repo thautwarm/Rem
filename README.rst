@@ -142,6 +142,10 @@ Rem 支持中文编程,
 +-----------+----------+
 | ``.``     | 之       |
 +-----------+----------+
+| ``它``    | 它       |
++-----------+----------+
+| =         | 等于     |
++-----------+----------+
 
 .. |PyPI version| image:: https://img.shields.io/pypi/v/remlang.svg
    :target: https://pypi.python.org/pypi/remlang
