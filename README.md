@@ -3,7 +3,7 @@
 [![MIT](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/thautwarm/Rem/blob/ebnfparser2.0/LICENSE)
 
 
-# Rem Langauge
+# Rem Language
 
 Just use **PyPI**. Recommend to install `cytoolz` before installing Rem to speed up function invocations.  
 ```shell
